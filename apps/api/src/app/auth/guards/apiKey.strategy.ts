@@ -36,8 +36,11 @@ export class ApiKeyStrategy extends PassportStrategy(Strategy, "apiKey") {
       throw new InternalServerErrorException("Failed to retrieve API key data");
     }
 
+    const parsed = JSON.parse(redisRes) as { id: string; email: string };
+
     return {
-      email: (JSON.parse(redisRes) as { id: string; email: string }).email
+      id: parsed.id,
+      email: parsed.email
     };
   }
 }

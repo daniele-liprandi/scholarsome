@@ -2,11 +2,12 @@ import { Component, ElementRef, OnInit, TemplateRef, ViewChild, ViewContainerRef
 import { FormBuilder, FormGroup, NgForm } from "@angular/forms";
 import { SetsService } from "../../shared/http/sets.service";
 import { ActivatedRoute, Router } from "@angular/router";
-import { QuizQuestion, Set } from "@scholarsome/shared";
+import { AiEnrichedCard, QuizQuestion, Set } from "@scholarsome/shared";
 import { Meta, Title } from "@angular/platform-browser";
 import { BsModalRef } from "ngx-bootstrap/modal";
 import { compareTwoStrings } from "string-similarity";
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
+import { AiService } from "../../shared/http/ai.service";
 
 @Component({
   selector: "scholarsome-study-set-quiz",
@@ -16,6 +17,7 @@ import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 export class StudySetQuizComponent implements OnInit {
   constructor(
     private readonly sets: SetsService,
+    private readonly aiService: AiService,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly fb: FormBuilder,
@@ -31,6 +33,9 @@ export class StudySetQuizComponent implements OnInit {
   writtenSelected = true;
   trueOrFalseSelected = true;
   multipleChoiceSelected = true;
+  aiAvailable = false;
+  aiModeSelected = false;
+  aiLoading = false;
 
   loaded = false;
   created = false;
@@ -48,11 +53,25 @@ export class StudySetQuizComponent implements OnInit {
 
   protected readonly faQuestionCircle = faQuestionCircle;
 
-  beginQuiz(form: NgForm) {
+  async beginQuiz(form: NgForm) {
     this.quizForm = new FormGroup({});
 
     const questions: QuizQuestion[] = [];
     this.questions = questions;
+
+    const aiByCardId = new Map<string, AiEnrichedCard>();
+
+    if (this.aiModeSelected && this.setId) {
+      this.aiLoading = true;
+
+      const enriched = await this.aiService.enrich(this.setId);
+
+      this.aiLoading = false;
+
+      for (const enrichedCard of enriched ?? []) {
+        aiByCardId.set(enrichedCard.cardId, enrichedCard);
+      }
+    }
 
     if (form.controls["numberOfQuestions"].value > this.set.cards.length) {
       const existingCards = this.set.cards;
@@ -117,6 +136,7 @@ export class StudySetQuizComponent implements OnInit {
 
       for (const index of indices) {
         unusedIndices = unusedIndices.filter((i) => i !== index);
+        const card = this.set.cards[index];
 
         // must be assigned here to suppress a ts error in the second switch
         let questionAnswerWith: "term" | "definition" = "term";
@@ -143,12 +163,19 @@ export class StudySetQuizComponent implements OnInit {
             break;
         }
 
+        const enrichedCard = aiByCardId.get(card.id);
+        const questionText = enrichedCard
+          ? questionAskWith === "term"
+            ? enrichedCard.termQuestion
+            : enrichedCard.definitionQuestion
+          : card[questionAskWith];
+
         if (questionType.type === "written") {
-          const answer = this.set.cards[index][questionAnswerWith].
+          const answer = card[questionAnswerWith].
               replace(/<[^>]+src="([^">]+)">/g, "").replace("<p>", "").replace("</p>", "");
 
           questions.push({
-            question: this.set.cards[index][questionAskWith],
+            question: questionText,
             index: 0,
             answerWith: questionAnswerWith,
             type: "written",
@@ -162,15 +189,15 @@ export class StudySetQuizComponent implements OnInit {
           let trueOrFalseOption = "";
 
           if (trueResult) {
-            trueOrFalseOption = this.set.cards[index][questionAnswerWith];
+            trueOrFalseOption = card[questionAnswerWith];
           } else {
             do {
               trueOrFalseOption = this.set.cards[Math.floor(Math.random() * this.set.cards.length)][questionAnswerWith];
-            } while (trueOrFalseOption === this.set.cards[index][questionAnswerWith]);
+            } while (trueOrFalseOption === card[questionAnswerWith]);
           }
 
           questions.push({
-            question: this.set.cards[index][questionAskWith],
+            question: questionText,
             index: 0,
             answerWith: questionAnswerWith,
             trueOrFalseOption,
@@ -188,37 +215,48 @@ export class StudySetQuizComponent implements OnInit {
             correct: false
           });
         } else {
-          let options = [
-            {
-              option: this.set.cards[index][questionAnswerWith].replace("<p>", "").replace("</p>", ""),
-              correct: true
+          const answer = card[questionAnswerWith].replace("<p>", "").replace("</p>", "");
+          let options = [{ option: answer, correct: true }];
+          const aiDistractors = questionAnswerWith === "term"
+            ? enrichedCard?.termDistractors
+            : enrichedCard?.definitionDistractors;
+
+          if (aiDistractors && aiDistractors.length === 3) {
+            const filtered = aiDistractors
+                .map((option) => option.trim())
+                .filter((option) => option.length > 0 && option !== answer);
+
+            if (new Set(filtered).size === 3) {
+              options.push(...filtered.map((option) => ({ option, correct: false })));
             }
-          ];
+          }
 
-          let generatedQuestions = 3;
-          if (3 > this.set.cards.length) generatedQuestions = this.set.cards.length - 1;
+          if (options.length < 4) {
+            let generatedQuestions = 3;
+            if (3 > this.set.cards.length) generatedQuestions = this.set.cards.length - 1;
 
-          for (let i = 0; i < generatedQuestions; i++) {
-            let option: { option: string; correct: boolean; };
+            for (let i = 0; i < generatedQuestions; i++) {
+              let option: { option: string; correct: boolean; };
 
-            do {
-              option = {
-                option: this.set.cards[Math.floor(Math.random() * this.set.cards.length)][questionAnswerWith].replace("<p>", "").replace("</p>", ""),
-                correct: false
-              };
-            } while (options.filter((o) => o.option === option.option).length > 0);
+              do {
+                option = {
+                  option: this.set.cards[Math.floor(Math.random() * this.set.cards.length)][questionAnswerWith].replace("<p>", "").replace("</p>", ""),
+                  correct: false
+                };
+              } while (options.filter((o) => o.option === option.option).length > 0);
 
-            options.push(option);
+              options.push(option);
+            }
           }
 
           options = options.sort(() => 0.5 - Math.random());
 
           questions.push({
-            question: this.set.cards[index][questionAskWith],
+            question: questionText,
             index: 0,
             answerWith: questionAnswerWith,
             type: "multipleChoice",
-            answer: this.set.cards[index][questionAnswerWith].replace("<p>", "").replace("</p>", ""),
+            answer,
             options,
             correct: false
           });
@@ -300,6 +338,7 @@ export class StudySetQuizComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.percentCorrect = -1;
+    this.aiAvailable = await this.aiService.available();
     this.setId = this.route.snapshot.paramMap.get("setId");
     if (!this.setId) {
       await this.router.navigate(["/404"]);

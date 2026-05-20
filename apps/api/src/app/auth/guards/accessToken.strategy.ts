@@ -25,10 +25,13 @@ export class AccessTokenStrategy extends PassportStrategy(
   }
 
   public async validate(payload: AccessTokenPayload): Promise<TokenUser> {
-    if (typeof payload.email !== "string" || payload.type !== "access") {
+    if (typeof payload.id !== "string" || typeof payload.email !== "string" || payload.type !== "access") {
       throw new UnauthorizedException("Invalid access token provided");
     }
 
-    return { email: payload.email };
+    return {
+      id: payload.id,
+      email: payload.email
+    };
   }
 }
