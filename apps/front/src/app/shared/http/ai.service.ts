@@ -35,4 +35,23 @@ export class AiService {
 
     return null;
   }
+
+  async explain(cardId: string, setId: string): Promise<string | null> {
+    let response: ApiResponse<string> | undefined;
+
+    try {
+      response = await lastValueFrom(this.http.post<ApiResponse<string>>("/api/ai/explain", {
+        cardId,
+        setId
+      }));
+    } catch (e) {
+      return null;
+    }
+
+    if (response.status === ApiResponseOptions.Success) {
+      return response.data;
+    }
+
+    return null;
+  }
 }

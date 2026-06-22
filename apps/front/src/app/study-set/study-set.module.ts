@@ -4,6 +4,7 @@ import { StudySetComponent } from "./study-set.component";
 import { StudySetFlashcardsComponent } from "./study-set-flashcards/study-set-flashcards.component";
 import { StudySetQuizComponent } from "./study-set-quiz/study-set-quiz.component";
 import { StudySetQuizQuestionComponent } from "./study-set-quiz/study-set-quiz-question/study-set-quiz-question.component";
+import { StudySetStudyComponent } from "./study-set-study/study-set-study.component";
 import { FontAwesomeModule } from "@fortawesome/angular-fontawesome";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { StudySetRoutingModule } from "./study-set-routing.module";
@@ -22,6 +23,7 @@ import { QuizletExportModalComponent } from "./quizlet-export-modal/quizlet-expo
     StudySetComponent,
     StudySetFlashcardsComponent,
     StudySetQuizComponent,
+    StudySetStudyComponent,
     StudySetQuizQuestionComponent,
     QuizletExportModalComponent
   ],

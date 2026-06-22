@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Request, UseGuards, BadRequestException } from "@nestjs/common";
 import { AccessTokenAuthenticatedGuard } from "../../auth/guards/accessTokenAuthenticated.guard";
 import { TokenUser } from "../../auth/types/token-user.interface";
 import { AiEnrichedCard, ApiResponse, ApiResponseOptions } from "@scholarsome/shared";
@@ -23,6 +23,21 @@ export class AiController {
     return {
       status: ApiResponseOptions.Success,
       data: await this.aiService.enrich(body.setId, req.user.id)
+    };
+  }
+
+  @UseGuards(AccessTokenAuthenticatedGuard)
+  @Post("explain")
+  async explain(
+    @Body() body: { cardId: string; setId: string },
+    @Request() req: ExpressRequest & { user: TokenUser }
+  ): Promise<ApiResponse<string>> {
+    if (!body.cardId || !body.setId) {
+      throw new BadRequestException("cardId and setId are required");
+    }
+    return {
+      status: ApiResponseOptions.Success,
+      data: await this.aiService.explain(body.cardId, body.setId, req.user.id)
     };
   }
 }

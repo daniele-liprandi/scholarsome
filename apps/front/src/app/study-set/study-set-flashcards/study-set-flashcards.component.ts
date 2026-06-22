@@ -3,10 +3,11 @@ import { SetsService } from "../../shared/http/sets.service";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Card } from "@prisma/client";
 import { BsModalRef } from "ngx-bootstrap/modal";
-import { faThumbsUp, faCake } from "@fortawesome/free-solid-svg-icons";
+import { faThumbsUp, faCake, faVolumeHigh, faLightbulb, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { DomSanitizer, Meta, Title } from "@angular/platform-browser";
 import { NgForm } from "@angular/forms";
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
+import { AiService } from "../../shared/http/ai.service";
 
 @Component({
   selector: "scholarsome-study-set-flashcards",
@@ -20,7 +21,8 @@ export class StudySetFlashcardsComponent implements OnInit {
     private readonly router: Router,
     private readonly titleService: Title,
     private readonly metaService: Meta,
-    public readonly sanitizer: DomSanitizer
+    public readonly sanitizer: DomSanitizer,
+    private readonly aiService: AiService
   ) {}
 
   @ViewChild("flashcardsConfig") configModal: TemplateRef<HTMLElement>;
@@ -59,10 +61,17 @@ export class StudySetFlashcardsComponent implements OnInit {
   // needed to prevent animation classes from being applied until first click
   protected flipInteraction = false;
 
+  protected aiAvailable = false;
+  protected explanation: string | null = null;
+  protected explanationLoading = false;
+
   protected modalRef?: BsModalRef;
   protected readonly faThumbsUp = faThumbsUp;
   protected readonly faCake = faCake;
   protected readonly faQuestionCircle = faQuestionCircle;
+  protected readonly faVolumeHigh = faVolumeHigh;
+  protected readonly faLightbulb = faLightbulb;
+  protected readonly faSpinner = faSpinner;
 
   @HostListener("document:keypress", ["$event"])
   keyboardSpaceEvent(event: KeyboardEvent) {
@@ -173,6 +182,7 @@ export class StudySetFlashcardsComponent implements OnInit {
 
     this.flipInteraction = false;
     this.flipped = false;
+    this.explanation = null;
 
     if (this.answer === "definition") {
       this.side = "term";
@@ -198,6 +208,22 @@ export class StudySetFlashcardsComponent implements OnInit {
     this.currentCard = this.cards[0];
   }
 
+  speakCard() {
+    if (!this.sideText) return;
+    const text = this.sideText.replace(/<[^>]+>/g, "").trim();
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async explainCard() {
+    if (!this.currentCard || !this.setId) return;
+    this.explanation = null;
+    this.explanationLoading = true;
+    this.explanation = await this.aiService.explain(this.currentCard.id, this.setId);
+    this.explanationLoading = false;
+  }
+
   reloadPage() {
     this.router.navigateByUrl("/", { skipLocationChange: true }).then(() => {
       this.router.navigate(["/study-set/" + this.setId + "/flashcards"]);
@@ -216,6 +242,8 @@ export class StudySetFlashcardsComponent implements OnInit {
       await this.router.navigate(["404"]);
       return;
     }
+
+    this.aiAvailable = await this.aiService.available();
 
     this.titleService.setTitle(set.title + " — Scholarsome");
     this.metaService.addTag({ name: "description", content: "Begin studying flashcards " + set.title + " study set on Scholarsome. Improve your memorization skills by taking a quiz." });
