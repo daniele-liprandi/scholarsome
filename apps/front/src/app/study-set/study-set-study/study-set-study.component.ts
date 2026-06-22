@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Meta, Title } from "@angular/platform-browser";
+import { faVolumeHigh, faLightbulb, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import {
   AiEnrichedCard,
   StudyAskDirection,
@@ -11,6 +12,7 @@ import {
 } from "@scholarsome/shared";
 import { SetsService } from "../../shared/http/sets.service";
 import { AiService } from "../../shared/http/ai.service";
+import { TtsService } from "../../shared/http/tts.service";
 import { applyAnswerResult, buildInitialQueue } from "./study-queue.util";
 
 interface DotViewModel {
@@ -37,6 +39,7 @@ export class StudySetStudyComponent implements OnInit {
   constructor(
     private readonly setsService: SetsService,
     private readonly aiService: AiService,
+    private readonly ttsService: TtsService,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly titleService: Title,
@@ -54,6 +57,9 @@ export class StudySetStudyComponent implements OnInit {
 
   blockedMessage: string | null = null;
 
+  explanation: string | null = null;
+  explanationLoading = false;
+
   askDirection: StudyAskDirection = "both";
   trueOrFalseEnabled = true;
   multipleChoiceEnabled = true;
@@ -62,6 +68,10 @@ export class StudySetStudyComponent implements OnInit {
   sessionState: StudySessionState | null = null;
 
   cardOrder: string[] = [];
+
+  readonly faVolumeHigh = faVolumeHigh;
+  readonly faLightbulb = faLightbulb;
+  readonly faSpinner = faSpinner;
 
   private readonly cardsById = new Map<string, Set["cards"][number]>();
   private readonly enrichedByCardId = new Map<string, AiEnrichedCard>();
@@ -193,7 +203,24 @@ export class StudySetStudyComponent implements OnInit {
     this.setActiveQuestion();
   }
 
+  speakQuestion(): void {
+    if (!this.activeQuestion) return;
+    const text = this.activeQuestion.questionType === "trueOrFalse"
+      ? `${this.activeQuestion.questionText}. ${this.activeQuestion.promptText}`
+      : this.activeQuestion.questionText;
+    this.ttsService.speak(text);
+  }
+
+  async explainCard(): Promise<void> {
+    if (!this.activeQuestion || !this.setId) return;
+    this.explanation = null;
+    this.explanationLoading = true;
+    this.explanation = await this.aiService.explain(this.activeQuestion.cardId, this.setId);
+    this.explanationLoading = false;
+  }
+
   private setActiveQuestion(): void {
+    this.explanation = null;
     if (!this.sessionState || this.sessionState.pointer < 0) {
       this.activeQuestion = null;
       this.completed = true;

@@ -8,6 +8,7 @@ import { DomSanitizer, Meta, Title } from "@angular/platform-browser";
 import { NgForm } from "@angular/forms";
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 import { AiService } from "../../shared/http/ai.service";
+import { TtsService } from "../../shared/http/tts.service";
 
 @Component({
   selector: "scholarsome-study-set-flashcards",
@@ -22,7 +23,8 @@ export class StudySetFlashcardsComponent implements OnInit {
     private readonly titleService: Title,
     private readonly metaService: Meta,
     public readonly sanitizer: DomSanitizer,
-    private readonly aiService: AiService
+    private readonly aiService: AiService,
+    private readonly ttsService: TtsService
   ) {}
 
   @ViewChild("flashcardsConfig") configModal: TemplateRef<HTMLElement>;
@@ -209,11 +211,7 @@ export class StudySetFlashcardsComponent implements OnInit {
   }
 
   speakCard() {
-    if (!this.sideText) return;
-    const text = this.sideText.replace(/<[^>]+>/g, "").trim();
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    this.ttsService.speak(this.sideText);
   }
 
   async explainCard() {
