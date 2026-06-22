@@ -28,7 +28,8 @@ services:
       - mariadb:/var/lib/mysql
     restart: always
   scholarsome:
-    image: hwgilbert16/scholarsome:latest
+    image: danieleliprandi/scholarsome:latest
+    pull_policy: always
     platform: "linux/amd64"
     ports:
       - "${HTTP_PORT}:${HTTP_PORT}"
