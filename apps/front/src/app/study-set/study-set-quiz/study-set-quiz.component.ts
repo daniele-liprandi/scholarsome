@@ -164,11 +164,11 @@ export class StudySetQuizComponent implements OnInit {
         }
 
         const enrichedCard = aiByCardId.get(card.id);
-        const questionText = enrichedCard
-          ? questionAskWith === "term"
-            ? enrichedCard.termQuestion
-            : enrichedCard.definitionQuestion
-          : card[questionAskWith];
+        const questionText = enrichedCard ?
+          questionAskWith === "term" ?
+            enrichedCard.termQuestion :
+            enrichedCard.definitionQuestion :
+          card[questionAskWith];
 
         if (questionType.type === "written") {
           const answer = card[questionAnswerWith].
@@ -217,9 +217,9 @@ export class StudySetQuizComponent implements OnInit {
         } else {
           const answer = card[questionAnswerWith].replace("<p>", "").replace("</p>", "");
           let options = [{ option: answer, correct: true }];
-          const aiDistractors = questionAnswerWith === "term"
-            ? enrichedCard?.termDistractors
-            : enrichedCard?.definitionDistractors;
+          const aiDistractors = questionAnswerWith === "term" ?
+            enrichedCard?.termDistractors :
+            enrichedCard?.definitionDistractors;
 
           if (aiDistractors && aiDistractors.length === 3) {
             const filtered = aiDistractors

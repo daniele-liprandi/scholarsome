@@ -49,10 +49,10 @@ export function buildInitialQueue(cards: QueueCardInput[], settings: BuildInitia
 }
 
 export function applyAnswerResult(
-  queue: StudyQueueItem[],
-  pointer: number,
-  wasCorrect: boolean,
-  dotsByCardId: StudySessionState["dotsByCardId"]
+    queue: StudyQueueItem[],
+    pointer: number,
+    wasCorrect: boolean,
+    dotsByCardId: StudySessionState["dotsByCardId"]
 ): StudySessionState {
   if (pointer < 0 || pointer >= queue.length) {
     return {

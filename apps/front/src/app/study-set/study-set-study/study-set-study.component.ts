@@ -13,6 +13,7 @@ import {
 import { SetsService } from "../../shared/http/sets.service";
 import { AiService } from "../../shared/http/ai.service";
 import { TtsService } from "../../shared/http/tts.service";
+import { FsrsService } from "../../shared/http/fsrs.service";
 import { applyAnswerResult, buildInitialQueue } from "./study-queue.util";
 
 interface DotViewModel {
@@ -40,6 +41,7 @@ export class StudySetStudyComponent implements OnInit {
     private readonly setsService: SetsService,
     private readonly aiService: AiService,
     private readonly ttsService: TtsService,
+    private readonly fsrsService: FsrsService,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly titleService: Title,
@@ -60,7 +62,7 @@ export class StudySetStudyComponent implements OnInit {
   explanation: string | null = null;
   explanationLoading = false;
 
-  askDirection: StudyAskDirection = "both";
+  askDirection: StudyAskDirection = "definition";
   trueOrFalseEnabled = true;
   multipleChoiceEnabled = true;
 
@@ -194,20 +196,25 @@ export class StudySetStudyComponent implements OnInit {
     }
 
     this.sessionState = applyAnswerResult(
-      this.sessionState.queue,
-      this.sessionState.pointer,
-      wasCorrect,
-      this.sessionState.dotsByCardId
+        this.sessionState.queue,
+        this.sessionState.pointer,
+        wasCorrect,
+        this.sessionState.dotsByCardId
     );
+
+    if (this.sessionState.dotsByCardId[cardId] === "mastered") {
+      const rating = this.wrongCardIds.has(cardId) ? 2 : 3;
+      this.fsrsService.submitReview(cardId, rating as 2 | 3);
+    }
 
     this.setActiveQuestion();
   }
 
   speakQuestion(): void {
     if (!this.activeQuestion) return;
-    const text = this.activeQuestion.questionType === "trueOrFalse"
-      ? `${this.activeQuestion.questionText}. ${this.activeQuestion.promptText}`
-      : this.activeQuestion.questionText;
+    const text = this.activeQuestion.questionType === "trueOrFalse" ?
+      `${this.activeQuestion.questionText}. ${this.activeQuestion.promptText}` :
+      this.activeQuestion.questionText;
     this.ttsService.speak(text);
   }
 
@@ -286,9 +293,9 @@ export class StudySetStudyComponent implements OnInit {
 
   private getMultipleChoiceOptions(item: StudyQueueItem, answer: string, enrichedCard?: AiEnrichedCard): string[] {
     const options = [answer];
-    const aiDistractors = item.answerWith === "term"
-      ? enrichedCard?.termDistractors
-      : enrichedCard?.definitionDistractors;
+    const aiDistractors = item.answerWith === "term" ?
+      enrichedCard?.termDistractors :
+      enrichedCard?.definitionDistractors;
 
     if (aiDistractors && aiDistractors.length === 3) {
       const filtered = aiDistractors
@@ -316,14 +323,14 @@ export class StudySetStudyComponent implements OnInit {
   }
 
   private getTrueOrFalsePrompt(
-    item: StudyQueueItem,
-    answer: string,
-    enrichedCard?: AiEnrichedCard
+      item: StudyQueueItem,
+      answer: string,
+      enrichedCard?: AiEnrichedCard
   ): { statement: string; trueIsCorrect: boolean } {
     const useTrueStatement = Math.random() < 0.5;
-    const statementPair = item.answerWith === "term"
-      ? enrichedCard?.termTrueFalseStatements
-      : enrichedCard?.definitionTrueFalseStatements;
+    const statementPair = item.answerWith === "term" ?
+      enrichedCard?.termTrueFalseStatements :
+      enrichedCard?.definitionTrueFalseStatements;
 
     if (statementPair) {
       return {
@@ -332,15 +339,15 @@ export class StudySetStudyComponent implements OnInit {
       };
     }
 
-    const fallbackDistractors = item.answerWith === "term"
-      ? enrichedCard?.termDistractors
-      : enrichedCard?.definitionDistractors;
+    const fallbackDistractors = item.answerWith === "term" ?
+      enrichedCard?.termDistractors :
+      enrichedCard?.definitionDistractors;
 
-    const falseStatement = fallbackDistractors?.find((value) => value.trim() !== answer)
-      ?? Array.from(this.cardsById.values())
+    const falseStatement = fallbackDistractors?.find((value) => value.trim() !== answer) ??
+      Array.from(this.cardsById.values())
           .map((card) => this.sanitizeHtml(card[item.answerWith]))
-          .find((value) => value !== answer)
-      ?? answer;
+          .find((value) => value !== answer) ??
+      answer;
 
     return {
       statement: useTrueStatement ? answer : falseStatement,
