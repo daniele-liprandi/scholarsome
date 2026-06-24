@@ -7,6 +7,8 @@ import { AvatarSettingsComponent } from "./avatar-settings/avatar-settings.compo
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { ChangePasswordSettingsComponent } from "./change-password-settings/change-password-settings.component";
 import { ChangeEmailSettingsComponent } from "./change-email-settings/change-email-settings.component";
+import { DeleteAccountSettingsComponent } from "./delete-account-settings/delete-account-settings.component";
+import { RouterModule } from "@angular/router";
 
 @NgModule({
   imports: [
@@ -14,13 +16,15 @@ import { ChangeEmailSettingsComponent } from "./change-email-settings/change-ema
     SettingsRoutingModule,
     FontAwesomeModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    RouterModule
   ],
   declarations: [
     SettingsComponent,
     AvatarSettingsComponent,
     ChangePasswordSettingsComponent,
-    ChangeEmailSettingsComponent
+    ChangeEmailSettingsComponent,
+    DeleteAccountSettingsComponent
   ]
 })
 export class SettingsModule {}

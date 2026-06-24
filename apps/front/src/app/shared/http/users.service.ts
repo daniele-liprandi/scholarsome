@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { ApiResponse, ApiResponseOptions, User } from "@scholarsome/shared";
 import { lastValueFrom } from "rxjs";
 
@@ -131,5 +131,19 @@ export class UsersService {
     }
 
     return true;
+  }
+
+  async deleteMe(password: string): Promise<ApiResponseOptions> {
+    try {
+      await lastValueFrom(
+          this.http.delete<ApiResponse<null>>("/api/users/me", { body: { password } })
+      );
+      return ApiResponseOptions.Success;
+    } catch (e) {
+      if (e instanceof HttpErrorResponse && e.status === 401) {
+        return ApiResponseOptions.Incorrect;
+      }
+      return ApiResponseOptions.Error;
+    }
   }
 }

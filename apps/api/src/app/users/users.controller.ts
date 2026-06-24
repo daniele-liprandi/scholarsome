@@ -1,13 +1,14 @@
-import { Controller, Get, NotFoundException, Param, Req, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, NotFoundException, Param, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiResponse, ApiResponseOptions } from "@scholarsome/shared";
 import { UsersService } from "./users.service";
-import { Request as ExpressRequest } from "express";
+import { Request as ExpressRequest, Response } from "express";
 import { User } from "@prisma/client";
 import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { UserIdParam } from "./param/userId.param";
 import { UserSuccessResponse } from "./response/success/user.success.response";
 import { ErrorResponse } from "../shared/response/error.response";
 import { AuthService } from "../auth/auth.service";
+import * as bcrypt from "bcrypt";
 
 @ApiTags("Users")
 @Controller("users")
@@ -34,6 +35,32 @@ export class UsersController {
     description: "Invalid authentication to access the requested resource",
     type: ErrorResponse
   })
+  @Delete("me")
+  async deleteMe(
+    @Req() req: ExpressRequest,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body: { password: string }
+  ): Promise<ApiResponse<null>> {
+    const cookies = await this.authService.getUserInfo(req);
+    if (!cookies) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
+
+    const user = await this.usersService.user({ id: cookies.id });
+    if (!user) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
+
+    const passwordMatch = await bcrypt.compare(body.password, user.password);
+    if (!passwordMatch) {
+      res.status(401);
+      return { status: ApiResponseOptions.Fail, message: "Incorrect password" };
+    }
+
+    await this.usersService.deleteUser({ id: user.id });
+
+    res.clearCookie("access_token");
+    res.clearCookie("authenticated");
+
+    return { status: ApiResponseOptions.Success, data: null };
+  }
+
   @Get("me")
   async myUser(@Req() req: ExpressRequest): Promise<ApiResponse<User>> {
     const cookies = await this.authService.getUserInfo(req);

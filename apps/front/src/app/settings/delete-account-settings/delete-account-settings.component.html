@@ -1,0 +1,19 @@
+<div *ngIf="!confirmed">
+  <p class="text-muted">This action is permanent and cannot be undone. All your sets, cards, and data will be deleted.</p>
+  <button type="button" class="btn btn-danger" (click)="confirmed = true">Delete my account</button>
+</div>
+<form class="py-3" *ngIf="confirmed" (ngSubmit)="submit(form)" #form="ngForm" ngNativeValidate>
+  <div class="mb-3">
+    <label for="deletePassword" class="form-label">Enter your password to confirm</label>
+    <input type="password" class="form-control" name="password" id="deletePassword" ngModel required>
+    <div *ngIf="error" class="form-text text-danger">Something went wrong. Try again later.</div>
+    <div *ngIf="invalidPassword" class="form-text text-danger">Incorrect password.</div>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-danger" [disabled]="clicked">
+      <span *ngIf="clicked" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Confirm deletion
+    </button>
+    <button type="button" class="btn btn-outline-secondary" (click)="confirmed = false">Cancel</button>
+  </div>
+</form>

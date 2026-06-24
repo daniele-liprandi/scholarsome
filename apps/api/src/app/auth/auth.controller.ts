@@ -398,11 +398,23 @@ export class AuthController {
    * @returns Success response
    */
   @ApiExcludeEndpoint()
+  @SkipThrottle()
+  @Get("registration-enabled")
+  registrationEnabled(): { enabled: boolean } {
+    return { enabled: !this.configService.get<string>("REGISTRATION_DISABLED") };
+  }
+
+  @ApiExcludeEndpoint()
   @Post("register")
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response
   ): Promise<ApiResponse<null>> {
+    if (this.configService.get<string>("REGISTRATION_DISABLED")) {
+      res.status(403);
+      return { status: ApiResponseOptions.Fail, message: "Registration is disabled" };
+    }
+
     if (
       (await this.usersService.user({ email: registerDto.email })) ||
       (await this.usersService.user({ username: registerDto.username }))
