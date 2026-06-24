@@ -9,6 +9,8 @@ import { NgForm } from "@angular/forms";
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 import { AiService } from "../../shared/http/ai.service";
 import { TtsService } from "../../shared/http/tts.service";
+import { FsrsService } from "../../shared/http/fsrs.service";
+import { CardFsrsStateResponse, FsrsRating } from "@scholarsome/shared";
 
 @Component({
   selector: "scholarsome-study-set-flashcards",
@@ -24,7 +26,8 @@ export class StudySetFlashcardsComponent implements OnInit {
     private readonly metaService: Meta,
     public readonly sanitizer: DomSanitizer,
     private readonly aiService: AiService,
-    private readonly ttsService: TtsService
+    private readonly ttsService: TtsService,
+    private readonly fsrsService: FsrsService
   ) {}
 
   @ViewChild("flashcardsConfig") configModal: TemplateRef<HTMLElement>;
@@ -33,39 +36,33 @@ export class StudySetFlashcardsComponent implements OnInit {
   protected cards: Card[];
   protected setId: string | null;
 
-  protected flashcardsMode: "traditional" | "progressive";
+  protected flashcardsMode: "browse" | "learn";
   protected shufflingEnabled = false;
 
-  // Array of the IDs of known cards for progressive mode
+  protected formFlashcardsType: "browse" | "learn" = "learn";
+  protected formAnswerWith: "term" | "definition" = "definition";
+  protected formEnableShuffling: "yes" | "no" = "yes";
+
   protected knownCardIDs: string[] = [];
-  // Whether the user is between rounds
   protected roundCompleted = false;
-  // Counter for number of cards learned in the current round
   protected newLearnedCards = 0;
 
-  // What the user answers with
   protected answer: "definition" | "term";
-  // The current index
   protected index = 0;
-  // The current card
   protected currentCard: Card;
 
-  // The current side being shown
   protected side: string;
-  // The text being shown to the user
   protected sideText = "";
-  // Displayed in bottom right showing the progress
   protected remainingCards = "";
 
-  // Whether the card has been flipped or not
   protected flipped = false;
-  // Whether the first flip interaction has been made
-  // needed to prevent animation classes from being applied until first click
   protected flipInteraction = false;
 
   protected aiAvailable = false;
   protected explanation: string | null = null;
   protected explanationLoading = false;
+
+  protected fsrsStates: CardFsrsStateResponse[] | null = null;
 
   protected modalRef?: BsModalRef;
   protected readonly faThumbsUp = faThumbsUp;
@@ -75,31 +72,33 @@ export class StudySetFlashcardsComponent implements OnInit {
   protected readonly faLightbulb = faLightbulb;
   protected readonly faSpinner = faSpinner;
 
+  private cardStartTime: number = Date.now();
+
+  get fsrsDueCount(): number {
+    if (!this.fsrsStates) return 0;
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return this.fsrsStates.filter((s) => s.state !== 0 && new Date(s.due) <= endOfToday).length;
+  }
+
   @HostListener("document:keypress", ["$event"])
   keyboardSpaceEvent(event: KeyboardEvent) {
-    if (
-      this.flashcardsMode &&
-      !this.roundCompleted &&
-      event.key === " "
-    ) {
+    if (this.flashcardsMode && !this.roundCompleted && event.key === " ") {
       this.flipCard();
     }
   }
 
   @HostListener("document:keyup", ["$event"])
   keyboardArrowEvent(event: KeyboardEvent) {
-    if (
-      this.flashcardsMode &&
-      !this.roundCompleted
-    ) {
+    if (this.flashcardsMode && !this.roundCompleted) {
       if (event.key === "ArrowLeft") {
-        if (this.flashcardsMode === "traditional") {
+        if (this.flashcardsMode === "browse") {
           this.changeCard(-1);
         } else {
           this.changeCard(1);
         }
       } else if (event.key === "ArrowRight") {
-        if (this.flashcardsMode === "traditional") {
+        if (this.flashcardsMode === "browse") {
           this.changeCard(1);
         } else {
           this.incrementLearntCount();
@@ -126,7 +125,6 @@ export class StudySetFlashcardsComponent implements OnInit {
       this.flipped = !this.flipped;
     }
 
-    // delayed to occur when text is the least visible during animation
     setTimeout(() => {
       if (this.side === "term") {
         this.sideText = this.cards[this.index].definition;
@@ -138,31 +136,35 @@ export class StudySetFlashcardsComponent implements OnInit {
     }, 150);
   }
 
+  rateCard(rating: FsrsRating): void {
+    const durationMs = Date.now() - this.cardStartTime;
+    this.fsrsService.submitReview(this.currentCard.id, rating, durationMs);
+
+    if (this.flashcardsMode === "learn") {
+      if (rating >= 3) {
+        this.incrementLearntCount();
+        this.knownCardIDs.push(this.currentCard.id);
+      }
+      this.changeCard(1);
+    } else {
+      this.changeCard(1);
+    }
+  }
+
   changeCard(direction: number) {
-    if (
-      this.index === 0 &&
-      direction === -1
-    ) return;
+    if (this.index === 0 && direction === -1) return;
 
-    if (
-      this.index === this.cards.length - 1 &&
-      direction === 1 &&
-      this.flashcardsMode === "traditional"
-    ) return;
+    if (this.index === this.cards.length - 1 && direction === 1 && this.flashcardsMode === "browse") return;
 
-    // increment the currentCard object to the next card in the array
-    if (this.flashcardsMode === "progressive" && this.index !== this.cards.length - 1) {
+    if (this.flashcardsMode === "learn" && this.index !== this.cards.length - 1) {
       this.currentCard = this.cards[this.index + 1];
     }
 
-    // runs after a progressive mode round has completed
-    if (this.index === this.cards.length - 1 && this.flashcardsMode === "progressive") {
-      // remove any cards that are known
+    if (this.index === this.cards.length - 1 && this.flashcardsMode === "learn") {
       this.cards = this.cards.filter((c) => !this.knownCardIDs.includes(c.id));
 
       this.roundCompleted = true;
 
-      // if the entire mode is not completed
       if (this.cards.length > 0) {
         this.index = 0;
         this.updateIndex();
@@ -185,6 +187,7 @@ export class StudySetFlashcardsComponent implements OnInit {
     this.flipInteraction = false;
     this.flipped = false;
     this.explanation = null;
+    this.cardStartTime = Date.now();
 
     if (this.answer === "definition") {
       this.side = "term";
@@ -208,6 +211,7 @@ export class StudySetFlashcardsComponent implements OnInit {
 
     this.sideText = this.cards[0][this.side as keyof Card] as string;
     this.currentCard = this.cards[0];
+    this.cardStartTime = Date.now();
   }
 
   speakCard() {
@@ -242,14 +246,12 @@ export class StudySetFlashcardsComponent implements OnInit {
     }
 
     this.aiAvailable = await this.aiService.available();
+    this.fsrsStates = await this.fsrsService.getStatesForSet(this.setId);
 
     this.titleService.setTitle(set.title + " — Scholarsome");
     this.metaService.addTag({ name: "description", content: "Begin studying flashcards " + set.title + " study set on Scholarsome. Improve your memorization skills by taking a quiz." });
 
-    // sort the cards by index
-    this.cards = set.cards.sort((a, b) => {
-      return a.index - b.index;
-    });
+    this.cards = set.cards.sort((a, b) => a.index - b.index);
 
     this.updateIndex();
   }
