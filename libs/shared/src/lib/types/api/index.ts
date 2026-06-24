@@ -3,3 +3,4 @@ export * from "./AnkiNote";
 export * from "./GeneralCard";
 export * from "./envSchema";
 export * from "./ai-enriched-card";
+export * from "./fsrs";

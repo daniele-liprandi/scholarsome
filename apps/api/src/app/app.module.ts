@@ -24,6 +24,7 @@ import { FoldersModule } from "./folders/folders.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { TasksService } from "./providers/tasks.service";
 import { AiModule } from "./providers/ai/ai.module";
+import { FsrsModule } from "./fsrs/fsrs.module";
 
 @Module({
   imports: [
@@ -106,7 +107,8 @@ import { AiModule } from "./providers/ai/ai.module";
     },
     ConvertingModule,
     FoldersModule,
-    AiModule
+    AiModule,
+    FsrsModule
   ],
   controllers: [],
   providers: [TasksService],

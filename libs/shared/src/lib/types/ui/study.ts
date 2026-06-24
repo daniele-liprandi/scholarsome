@@ -1,4 +1,5 @@
 export type StudyQuestionType = "trueOrFalse" | "multipleChoice";
+export type FsrsRating = 1 | 2 | 3 | 4;
 export type StudyAskDirection = "term" | "definition" | "both";
 
 export type StudyDotStatus = "unseen" | "inProgress" | "wrong" | "recovering" | "mastered";
