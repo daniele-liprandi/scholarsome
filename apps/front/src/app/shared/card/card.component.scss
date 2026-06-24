@@ -25,3 +25,19 @@
 .scholarsome-card {
   min-width: 50vw;
 }
+
+.fsrs-overdue {
+  border-left: 4px solid #dc3545;
+}
+
+.fsrs-due-today {
+  border-left: 4px solid #fd7e14;
+}
+
+.fsrs-ok {
+  border-left: 4px solid #198754;
+}
+
+.fsrs-new {
+  border-left: 4px solid #adb5bd;
+}

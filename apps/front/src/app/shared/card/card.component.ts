@@ -17,6 +17,7 @@ import { DomSanitizer } from "@angular/platform-browser";
 import { ViewportScroller } from "@angular/common";
 import { DeviceDetectorService } from "ngx-device-detector";
 import Quill from "quill";
+import { CardFsrsStateResponse } from "@scholarsome/shared";
 
 @Component({
   selector: "scholarsome-card",
@@ -45,6 +46,21 @@ export class CardComponent implements OnInit, AfterViewInit {
   @Input() upArrow = true;
   @Input() downArrow = true;
   @Input() trashCan = true;
+
+  @Input() fsrsState: CardFsrsStateResponse | null = null;
+
+  get fsrsBorderClass(): string {
+    if (!this.fsrsState) return "";
+    const s = this.fsrsState;
+    if (s.state === 0) return "fsrs-new";
+    const due = new Date(s.due);
+    const now = new Date();
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+    if (due <= now) return "fsrs-overdue";
+    if (due <= endOfToday) return "fsrs-due-today";
+    return "fsrs-ok";
+  }
 
   @Output() addCardEvent = new EventEmitter();
   @Output() deleteCardEvent = new EventEmitter<number>();
