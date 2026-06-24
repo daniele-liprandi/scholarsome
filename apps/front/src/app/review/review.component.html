@@ -1,0 +1,40 @@
+<div class="d-flex justify-content-center mt-5" *ngIf="loading">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+
+<div class="container py-5" *ngIf="!loading && completed">
+  <div class="text-center">
+    <h2>All caught up!</h2>
+    <p class="text-muted">No cards are currently due for review across your sets.</p>
+    <a class="btn btn-primary" [routerLink]="['/homepage']">Back to homepage</a>
+  </div>
+</div>
+
+<div class="container py-4" *ngIf="!loading && !completed && current">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/homepage']">← Back</a>
+    <span class="text-muted small">{{ progress }}</span>
+    <span class="badge bg-secondary">{{ current.setTitle }}</span>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body text-center fs-3 py-5" style="cursor: pointer; min-height: 200px;" (click)="flip()">
+      <div *ngIf="!flipped" [innerHTML]="sanitizer.bypassSecurityTrustHtml(current.term)"></div>
+      <div *ngIf="flipped" [innerHTML]="sanitizer.bypassSecurityTrustHtml(current.definition)"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body text-center">
+      <div *ngIf="flipped" class="d-flex justify-content-center gap-2">
+        <button class="btn btn-outline-danger fw-semibold" (click)="rate(1)">Again</button>
+        <button class="btn btn-outline-warning fw-semibold" (click)="rate(2)">Hard</button>
+        <button class="btn btn-outline-primary fw-semibold" (click)="rate(3)">Good</button>
+        <button class="btn btn-outline-success fw-semibold" (click)="rate(4)">Easy</button>
+      </div>
+      <p *ngIf="!flipped" class="text-muted small mb-0">Click the card or press Space to reveal the answer</p>
+    </div>
+  </div>
+</div>
