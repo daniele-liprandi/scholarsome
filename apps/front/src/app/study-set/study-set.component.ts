@@ -16,6 +16,8 @@ import { QuizletExportModalComponent } from "./quizlet-export-modal/quizlet-expo
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 import { faFileExport, faShareFromSquare, faPencil, faSave, faCancel, faTrashCan, faClipboard, faStar, faQ, faFileCsv, faImages } from "@fortawesome/free-solid-svg-icons";
 import { ConvertingService } from "../shared/http/converting.service";
+import { FsrsService } from "../shared/http/fsrs.service";
+import { CardFsrsStateResponse } from "@scholarsome/shared";
 
 @Component({
   selector: "scholarsome-study-set",
@@ -30,7 +32,8 @@ export class StudySetComponent implements OnInit {
     private readonly titleService: Title,
     private readonly metaService: Meta,
     private readonly setsService: SetsService,
-    private readonly convertingService: ConvertingService
+    private readonly convertingService: ConvertingService,
+    private readonly fsrsService: FsrsService
   ) {}
 
   @ViewChild("spinner", { static: true }) spinner: ElementRef;
@@ -51,6 +54,9 @@ export class StudySetComponent implements OnInit {
 
   protected cards: ComponentRef<CardComponent>[] = [];
   protected set: Set;
+
+  protected fsrsStates: CardFsrsStateResponse[] | null = null;
+  protected isAuthenticated = false;
 
   protected saveInProgress = false;
   protected ankiExportInProgress = false;
@@ -77,6 +83,57 @@ export class StudySetComponent implements OnInit {
 
   protected readonly navigator = navigator;
   protected readonly window = window;
+
+  get fsrsNewCount(): number {
+    return this.fsrsStates?.filter((s) => s.state === 0).length ?? 0;
+  }
+
+  get fsrsDueTodayCount(): number {
+    if (!this.fsrsStates) return 0;
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return this.fsrsStates.filter((s) => s.state !== 0 && new Date(s.due) <= endOfToday).length;
+  }
+
+  get fsrsOverdueCount(): number {
+    if (!this.fsrsStates) return 0;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return this.fsrsStates.filter((s) => s.state !== 0 && new Date(s.due) < startOfToday).length;
+  }
+
+  get fsrsNextDue(): string | null {
+    if (!this.fsrsStates) return null;
+    const reviewed = this.fsrsStates.filter((s) => s.state !== 0);
+    if (reviewed.length === 0) return null;
+    const nearest = reviewed.reduce((min, s) => new Date(s.due) < new Date(min.due) ? s : min);
+    return this.formatRelativeTime(new Date(nearest.due));
+  }
+
+  get fsrsHasDashboard(): boolean {
+    return this.isAuthenticated && this.fsrsStates !== null && this.fsrsStates.length > 0;
+  }
+
+  async reloadFsrsStates(): Promise<void> {
+    if (!this.setId || !this.isAuthenticated) return;
+    this.fsrsStates = await this.fsrsService.getStatesForSet(this.setId);
+  }
+
+  private formatRelativeTime(date: Date): string {
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+
+    if (diffMins < 0) return "overdue";
+    if (diffMins < 60) return `in ${diffMins} minute${diffMins !== 1 ? "s" : ""}`;
+
+    const diffHours = Math.round(diffMins / 60);
+    if (diffHours < 24) return `in ${diffHours} hour${diffHours !== 1 ? "s" : ""}`;
+
+    const diffDays = Math.round(diffHours / 24);
+    if (diffDays === 1) return "tomorrow";
+    return `in ${diffDays} days`;
+  }
 
   async exportSetToAnkiApkg() {
     this.ankiExportInProgress = true;
@@ -162,6 +219,7 @@ export class StudySetComponent implements OnInit {
     trashCan?: boolean;
     term?: string;
     definition?: string;
+    fsrsState?: CardFsrsStateResponse | null;
   }) {
     const card = this.cardsContainer.createComponent<CardComponent>(CardComponent);
 
@@ -175,6 +233,7 @@ export class StudySetComponent implements OnInit {
     card.instance.trashCan = opts.trashCan ? opts.trashCan : false;
     card.instance.term = opts.term ? opts.term : "";
     card.instance.definition = opts.definition ? opts.definition : "";
+    card.instance.fsrsState = opts.fsrsState ?? null;
 
     card.instance.deleteCardEvent.subscribe((e) => {
       if (this.cardsContainer.length > 1) {
@@ -305,13 +364,15 @@ export class StudySetComponent implements OnInit {
         for (const card of this.set.cards.sort((a, b) => {
           return a.index - b.index;
         })) {
+          const fsrsState = this.fsrsStates?.find((s) => s.cardId === card.id) ?? null;
           this.addCard({
             id: card.id,
             isSaved: true,
             index: card.index,
             editingEnabled: false,
             term: card.term,
-            definition: card.definition
+            definition: card.definition,
+            fsrsState
           });
         }
       }
@@ -374,7 +435,11 @@ export class StudySetComponent implements OnInit {
 
     this.set = set;
 
-    if (user && user.id === set.authorId) this.userIsAuthor = true;
+    if (user) {
+      this.isAuthenticated = true;
+      if (user.id === set.authorId) this.userIsAuthor = true;
+      this.fsrsStates = await this.fsrsService.getStatesForSet(this.setId);
+    }
 
     if (window.location.href.slice(0, 5) !== "https") {
       this.isHttps = false;
