@@ -89,12 +89,13 @@
         </button>
         <div class="d-flex align-items-center">
           <div class="text-danger" *ngIf="uploadTooLarge">The upload size cannot exceed 30 megabytes.</div>
+          <div class="text-danger" *ngIf="saveError">Failed to save. Please try refreshing the page and signing in again.</div>
           <button type="submit" class="btn btn-primary me-2" *ngIf="isEditing" [disabled]="saveInProgress" (click)="saveCards()">
             <span *ngIf="saveInProgress" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
             <fa-icon [icon]="faSave"></fa-icon>
             Save
           </button>
-          <button type="submit" class="btn btn-secondary" *ngIf="isEditing" [disabled]="saveInProgress" (click)="viewCards(); deleteClicked = false; uploadTooLarge = false;">
+          <button type="submit" class="btn btn-secondary" *ngIf="isEditing" [disabled]="saveInProgress" (click)="viewCards(); deleteClicked = false; uploadTooLarge = false; saveError = false;">
             <fa-icon [icon]="faCancel"></fa-icon>
             Cancel
           </button>

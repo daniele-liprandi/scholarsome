@@ -53,6 +53,7 @@ export class StudySetComponent implements OnInit {
   protected set: Set;
 
   protected saveInProgress = false;
+  protected saveError = false;
   protected ankiExportInProgress = false;
   protected csvExportInProgress = false;
   protected mediaExportInProgress = false;
@@ -280,8 +281,11 @@ export class StudySetComponent implements OnInit {
 
       this.isEditing = true;
       this.saveInProgress = false;
+      this.saveError = true;
       return;
     }
+
+    this.saveError = false;
     this.set = updated;
 
     this.cards = [];
