@@ -40,8 +40,14 @@
             >Home</a
           >
         </li>
-        <li class="nav-item">
-          <a class="nav-link text-black" aria-current="page" href="/handbook">Handbook</a>
+        <li class="nav-item" *ngIf="signedIn">
+          <a
+            class="nav-link text-black"
+            aria-current="page"
+            [attr.data-bs-toggle]="isMobile ? 'collapse' : ''"
+            [attr.data-bs-target]="isMobile ? '#navbarSupportedContent' : ''"
+            [routerLink]="'/explore'"
+          >Explore</a>
         </li>
         <li class="btn-group" dropdown>
           <button
@@ -144,6 +150,7 @@
         </li>
       </ul>
       <div class="d-flex align-items-baseline">
+        <a class="nav-link text-black me-2" href="/handbook">Handbook</a>
         <a
           *ngIf="
             window.location.hostname !== 'scholarsome.com' && updateAvailable

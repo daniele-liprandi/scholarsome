@@ -16,6 +16,10 @@ const routes: Routes = [
     loadChildren: () => import("./homepage/homepage.module").then((m) => m.HomepageModule)
   },
   {
+    path: "explore",
+    loadChildren: () => import("./explore/explore.module").then((m) => m.ExploreModule)
+  },
+  {
     path: "study-set",
     loadChildren: () => import("./study-set/study-set.module").then((m) => m.StudySetModule)
   },

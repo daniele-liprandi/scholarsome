@@ -103,6 +103,67 @@ export class SetsService {
     });
   }
 
+  async publicSets(params: {
+    search?: string;
+    sort?: "newest" | "oldest" | "most_cards";
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    sets: {
+      id: string;
+      title: string;
+      description: string | null;
+      author: { id: string; username: string };
+      cardCount: number;
+      createdAt: Date;
+      updatedAt: Date;
+    }[];
+    total: number;
+  }> {
+    const { search = "", sort = "newest", page = 1, limit = 20 } = params;
+
+    const where: Prisma.SetWhereInput = {
+      private: false,
+      ...(search ? {
+        OR: [
+          { title: { contains: search } },
+          { author: { username: { contains: search } } }
+        ]
+      } : {})
+    };
+
+    const total = await this.prisma.set.count({ where });
+
+    const orderBy: Prisma.SetOrderByWithRelationInput =
+      sort === "oldest" ? { createdAt: "asc" } :
+      sort === "most_cards" ? { cards: { _count: "desc" } } :
+      { createdAt: "desc" };
+
+    const sets = await this.prisma.set.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy,
+      include: {
+        author: { select: { id: true, username: true } },
+        _count: { select: { cards: true } }
+      }
+    });
+
+    return {
+      sets: sets.map((s) => ({
+        id: s.id,
+        title: s.title,
+        description: s.description ?? null,
+        author: s.author,
+        cardCount: s._count.cards,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt
+      })),
+      total
+    };
+  }
+
   /**
    * Queries the database for a unique set
    *

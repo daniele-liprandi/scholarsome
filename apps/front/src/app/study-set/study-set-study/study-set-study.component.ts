@@ -14,6 +14,7 @@ import { SetsService } from "../../shared/http/sets.service";
 import { AiService } from "../../shared/http/ai.service";
 import { TtsService } from "../../shared/http/tts.service";
 import { FsrsService } from "../../shared/http/fsrs.service";
+import { UsersService } from "../../shared/http/users.service";
 import { applyAnswerResult, buildInitialQueue } from "./study-queue.util";
 
 interface DotViewModel {
@@ -42,6 +43,7 @@ export class StudySetStudyComponent implements OnInit {
     private readonly aiService: AiService,
     private readonly ttsService: TtsService,
     private readonly fsrsService: FsrsService,
+    private readonly usersService: UsersService,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly titleService: Title,
@@ -52,6 +54,7 @@ export class StudySetStudyComponent implements OnInit {
   set: Set | null = null;
 
   aiAvailable = false;
+  isGuest = false;
   loaded = false;
   starting = false;
   started = false;
@@ -105,6 +108,9 @@ export class StudySetStudyComponent implements OnInit {
     }
 
     this.aiAvailable = await this.aiService.available();
+
+    const user = await this.usersService.myUser();
+    this.isGuest = !user;
 
     const set = await this.setsService.set(this.setId);
 
@@ -202,7 +208,7 @@ export class StudySetStudyComponent implements OnInit {
         this.sessionState.dotsByCardId
     );
 
-    if (this.sessionState.dotsByCardId[cardId] === "mastered") {
+    if (this.sessionState.dotsByCardId[cardId] === "mastered" && !this.isGuest) {
       const rating = this.wrongCardIds.has(cardId) ? 2 : 3;
       this.fsrsService.submitReview(cardId, rating as 2 | 3);
     }

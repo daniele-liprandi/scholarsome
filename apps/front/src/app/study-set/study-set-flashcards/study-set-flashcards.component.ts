@@ -10,6 +10,7 @@ import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 import { AiService } from "../../shared/http/ai.service";
 import { TtsService } from "../../shared/http/tts.service";
 import { FsrsService } from "../../shared/http/fsrs.service";
+import { UsersService } from "../../shared/http/users.service";
 import { CardFsrsStateResponse, FsrsRating } from "@scholarsome/shared";
 
 @Component({
@@ -27,7 +28,8 @@ export class StudySetFlashcardsComponent implements OnInit {
     public readonly sanitizer: DomSanitizer,
     private readonly aiService: AiService,
     private readonly ttsService: TtsService,
-    private readonly fsrsService: FsrsService
+    private readonly fsrsService: FsrsService,
+    private readonly usersService: UsersService
   ) {}
 
   @ViewChild("flashcardsConfig") configModal: TemplateRef<HTMLElement>;
@@ -63,6 +65,7 @@ export class StudySetFlashcardsComponent implements OnInit {
   protected explanationLoading = false;
 
   protected fsrsStates: CardFsrsStateResponse[] | null = null;
+  protected isGuest = false;
 
   protected modalRef?: BsModalRef;
   protected readonly faThumbsUp = faThumbsUp;
@@ -246,7 +249,13 @@ export class StudySetFlashcardsComponent implements OnInit {
     }
 
     this.aiAvailable = await this.aiService.available();
-    this.fsrsStates = await this.fsrsService.getStatesForSet(this.setId);
+
+    const user = await this.usersService.myUser();
+    this.isGuest = !user;
+
+    if (!this.isGuest) {
+      this.fsrsStates = await this.fsrsService.getStatesForSet(this.setId);
+    }
 
     this.titleService.setTitle(set.title + " — Scholarsome");
     this.metaService.addTag({ name: "description", content: "Begin studying flashcards " + set.title + " study set on Scholarsome. Improve your memorization skills by taking a quiz." });
