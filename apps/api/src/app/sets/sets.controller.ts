@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   NotFoundException,
   Param,
   Patch,
@@ -45,6 +46,8 @@ import { PublicSetsSuccessResponse } from "./response/success/public-sets.succes
 @ApiTags("Sets")
 @Controller("sets")
 export class SetsController {
+  private readonly logger = new Logger(SetsController.name);
+
   constructor(
     private readonly setsService: SetsService,
     private readonly usersService: UsersService,
@@ -346,14 +349,27 @@ export class SetsController {
   @UseGuards(AuthenticatedGuard)
   @Patch(":setId")
   async updateSet(@Param() params: SetIdParam, @Body(HtmlDecodePipe) body: UpdateSetDto, @Request() req: ExpressRequest): Promise<ApiResponse<Set>> {
+    this.logger.log(`PATCH /sets/${params.setId} — cards: ${body.cards?.length ?? 0}`);
+    try {
+      return await this._updateSet(params, body, req);
+    } catch (e) {
+      this.logger.error(`updateSet failed for set ${params.setId}: ${(e as Error).message}`, (e as Error).stack);
+      throw e;
+    }
+  }
+
+  private async _updateSet(params: SetIdParam, body: UpdateSetDto, req: ExpressRequest): Promise<ApiResponse<Set>> {
+    this.logger.debug(`[updateSet] resolving user`);
     const user = await this.authService.getUserInfo(req);
     if (!user) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
 
+    this.logger.debug(`[updateSet] loading set ${params.setId}`);
     const set = await this.setsService.set({
       id: params.setId
     });
     if (!set) throw new NotFoundException({ status: "fail", message: "Set not found" });
 
+    this.logger.debug(`[updateSet] verifying ownership`);
     if (!(await this.setsService.verifySetOwnership(req, params.setId))) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
 
     let newFolderIDs: string[] = [];
@@ -386,6 +402,7 @@ export class SetsController {
     const newMediaEntries: { name: string; cardId: string }[] = [];
 
     if (body.cards) {
+      this.logger.debug(`[updateSet] loading existing cards for set ${set.id}`);
       const existingCards = await this.cardsService.cards({ where: { setId: set.id } });
       const existingCardIds = new Set(existingCards.map((c) => c.id));
       const bodyCardIds = new Set(body.cards.filter((c) => c.id).map((c) => c.id as string));
@@ -395,7 +412,10 @@ export class SetsController {
           .filter((c) => !bodyCardIds.has(c.id))
           .map((c) => c.id);
 
+      this.logger.debug(`[updateSet] db=${existingCards.length} body=${body.cards.length} toDelete=${cardIdsToDelete.length}`);
+
       for (const cardId of cardIdsToDelete) {
+        this.logger.debug(`[updateSet] deleting card ${cardId}`);
         const card = existingCards.find((c) => c.id === cardId);
         if (card?.media) {
           for (const mediaFile of card.media) {
@@ -403,6 +423,7 @@ export class SetsController {
           }
         }
         await this.cardsService.deleteCard({ id: cardId });
+        this.logger.debug(`[updateSet] deleted card ${cardId}`);
       }
 
       // Cards present in body with a known ID → update in-place (FSRS state survives)
