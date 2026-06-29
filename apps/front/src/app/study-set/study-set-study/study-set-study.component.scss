@@ -1,0 +1,41 @@
+.study-container {
+  max-width: 980px;
+  margin-top: 2rem;
+  margin-bottom: 4rem;
+}
+
+.question-card {
+  min-height: 18rem;
+}
+
+.question-prompt {
+  font-size: 1.1rem;
+}
+
+.dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid #ced4da;
+}
+
+.dot-unseen {
+  background-color: #f1f3f5;
+}
+
+.dot-inProgress {
+  background-color: #0d6efd;
+}
+
+.dot-wrong {
+  background-color: #dc3545;
+}
+
+.dot-recovering {
+  background-color: #ffc107;
+}
+
+.dot-mastered {
+  background-color: #198754;
+}

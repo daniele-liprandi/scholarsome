@@ -32,6 +32,10 @@ const routes: Routes = [
     loadChildren: () => import("./folder/folder.module").then((m) => m.FolderModule)
   },
   {
+    path: "review",
+    loadChildren: () => import("./review/review.module").then((m) => m.ReviewModule)
+  },
+  {
     path: "404",
     component: NotfoundComponent
   },

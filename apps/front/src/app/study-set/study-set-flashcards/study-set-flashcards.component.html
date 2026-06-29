@@ -5,37 +5,42 @@
         Flashcards configuration
         <a href="/handbook/usage/flashcards" target="_blank" class="text-decoration-none help-button"><fa-icon [icon]="faQuestionCircle" class="fs-5"></fa-icon></a>
       </h2>
+      <div *ngIf="fsrsStates && fsrsDueCount > 0" class="alert alert-primary py-2 small mb-3">
+        This set has {{ fsrsDueCount }} card{{ fsrsDueCount !== 1 ? 's' : '' }} due for review — start a session to stay on schedule.
+      </div>
       <form #configForm="ngForm" (ngSubmit)="beginFlashcards(configForm)" ngNativeValidate>
         <div class="mb-2">
-          <label for="traditional-radio" class="form-label fs-5">Type</label>
+          <label class="form-label fs-5">Type</label>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="flashcards-type" id="traditional-radio" value="traditional" ngModel required>
-            <label class="form-check-label" for="traditional-radio">Traditional</label>
+            <input class="form-check-input" type="radio" name="flashcards-type" id="browse-radio" value="browse" [(ngModel)]="formFlashcardsType" required>
+            <label class="form-check-label fw-semibold" for="browse-radio">Browse</label>
+            <div class="text-muted small">Flip through all cards at your own pace. Rate each one after flipping to schedule its next review.</div>
           </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="flashcards-type" id="progressive-radio" value="progressive" ngModel required>
-            <label class="form-check-label" for="progressive-radio">Progressive</label>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="radio" name="flashcards-type" id="learn-radio" value="learn" [(ngModel)]="formFlashcardsType" required>
+            <label class="form-check-label fw-semibold" for="learn-radio">Learn</label>
+            <div class="text-muted small">Cards you know drop out each round until only the hard ones remain. Again or Hard keeps a card in the round; Good or Easy marks it as known and schedules the next review.</div>
           </div>
         </div>
         <div class="mb-3">
           <label for="term-radio" class="form-label fs-5">Answer with</label>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="answer-with" id="term-radio" value="term" ngModel required>
+            <input class="form-check-input" type="radio" name="answer-with" id="term-radio" value="term" [(ngModel)]="formAnswerWith" required>
             <label class="form-check-label" for="term-radio">Term</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="answer-with" id="definition-radio" value="definition" ngModel required>
+            <input class="form-check-input" type="radio" name="answer-with" id="definition-radio" value="definition" [(ngModel)]="formAnswerWith" required>
             <label class="form-check-label" for="definition-radio">Definition</label>
           </div>
         </div>
         <div class="mb-3">
           <label for="term-radio" class="form-label fs-5">Enable shuffling</label>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="enable-shuffling" id="yes-radio" value="yes" ngModel required>
+            <input class="form-check-input" type="radio" name="enable-shuffling" id="yes-radio" value="yes" [(ngModel)]="formEnableShuffling" required>
             <label class="form-check-label" for="yes-radio">Yes</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="enable-shuffling" id="no-radio" value="no" ngModel required>
+            <input class="form-check-input" type="radio" name="enable-shuffling" id="no-radio" value="no" [(ngModel)]="formEnableShuffling" required>
             <label class="form-check-label" for="no-radio">No</label>
           </div>
         </div>
@@ -82,13 +87,20 @@
   <div class="row mt-3">
     <div class="card text-center shadow-sm">
       <div class="card-body">
-        <div class="mt-2 d-flex justify-content-around" *ngIf="cards && flashcardsMode === 'traditional'">
+        <div *ngIf="flipped">
+          <div class="d-flex justify-content-center gap-2 mb-3">
+            <button type="button" class="btn btn-outline-danger fw-semibold" (click)="rateCard(1)">Again</button>
+            <button type="button" class="btn btn-outline-warning fw-semibold" (click)="rateCard(2)">Hard</button>
+            <button type="button" class="btn btn-outline-primary fw-semibold" (click)="rateCard(3)">Good</button>
+            <button type="button" class="btn btn-outline-success fw-semibold" (click)="rateCard(4)">Easy</button>
+          </div>
+        </div>
+        <div *ngIf="!flipped && flashcardsMode === 'browse'" class="mt-2 d-flex justify-content-around">
           <button type="button" class="fs-4 w-25 btn btn-outline-secondary mb-3" (click)="changeCard(-1)" [disabled]="index === 0 ? true : null"><fa-icon [icon]="['far', 'arrow-alt-circle-left']"></fa-icon></button>
           <button type="button" class="fs-4 w-25 btn btn-outline-secondary mb-3" (click)="changeCard(1)" [disabled]="cards.length === index + 1 ? true : null"><fa-icon [icon]="['far', 'arrow-alt-circle-right']"></fa-icon></button>
         </div>
-        <div class="mt-2 d-flex justify-content-around" *ngIf="cards && flashcardsMode !== 'traditional'">
-          <button type="button" class="fs-4 w-25 btn btn-outline-warning mb-3 fw-bold" (click)="changeCard(1)">Don't know</button>
-          <button type="button" class="fs-4 w-25 btn btn-outline-success mb-3 fw-bold" (click)="incrementLearntCount(); knownCardIDs.push(currentCard.id); changeCard(1);">Know</button>
+        <div *ngIf="!flipped && flashcardsMode === 'learn'" class="mt-2 d-flex justify-content-around">
+          <p class="text-muted small mb-3">Flip the card to rate it</p>
         </div>
         <div class="mx-2 d-flex justify-content-between align-items-center">
           <p class="text-secondary fs-5 mb-0">{{remainingCards}}</p>

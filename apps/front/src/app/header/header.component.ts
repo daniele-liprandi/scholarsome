@@ -49,6 +49,9 @@ export class HeaderComponent implements OnInit, AfterViewInit, OnDestroy {
   // If the user is signed in
   protected signedIn = false;
 
+  // Whether registration is open
+  protected registrationEnabled = true;
+
   // URL of avatar
   protected avatarUrl: SafeResourceUrl | null;
 
@@ -100,6 +103,10 @@ export class HeaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    this.authService.registrationEnabled().then((enabled) => {
+      this.registrationEnabled = enabled;
+    });
+
     if (this.cookieService.get("authenticated")) {
       // we set this.user here so that it can be checked on every router event and log users out if auth invalid
       // however since header initializes on the homepage, this.user will not be set immediately after login

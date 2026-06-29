@@ -218,4 +218,13 @@ export class AuthService {
       return ApiResponseOptions.Error;
     }
   }
+
+  async registrationEnabled(): Promise<boolean> {
+    try {
+      const result = await lastValueFrom(this.http.get<{ enabled: boolean }>("/api/auth/registration-enabled"));
+      return result.enabled;
+    } catch {
+      return true;
+    }
+  }
 }
