@@ -41,3 +41,21 @@
 .fsrs-new {
   border-left: 4px solid #adb5bd;
 }
+
+:host .card {
+  position: relative;
+}
+
+.priority-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+
+  &.priority-A { color: #1565C0; }
+  &.priority-B { color: #1E88E5; }
+  &.priority-C { color: #90CAF9; }
+}
