@@ -122,5 +122,5 @@ export const sanitizationConfig = {
     "*": allowedAttributes
   },
   allowedSchemes: ["data"],
-  allowVulnerableTags: true,
+  allowVulnerableTags: true
 };

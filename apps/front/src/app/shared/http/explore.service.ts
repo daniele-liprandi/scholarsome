@@ -38,7 +38,7 @@ export class ExploreService {
 
     try {
       const response = await lastValueFrom(
-        this.http.get<ApiResponse<PublicSetsResult>>("/api/sets/public?" + query.toString())
+          this.http.get<ApiResponse<PublicSetsResult>>("/api/sets/public?" + query.toString())
       );
       if (response.status === ApiResponseOptions.Success) return response.data;
       return null;

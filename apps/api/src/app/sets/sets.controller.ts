@@ -359,7 +359,7 @@ export class SetsController {
   }
 
   private async _updateSet(params: SetIdParam, body: UpdateSetDto, req: ExpressRequest): Promise<ApiResponse<PrismaSet>> {
-    this.logger.debug(`[updateSet] resolving user`);
+    this.logger.debug("[updateSet] resolving user");
     const user = await this.authService.getUserInfo(req);
     if (!user) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
 
@@ -369,7 +369,7 @@ export class SetsController {
     });
     if (!set) throw new NotFoundException({ status: "fail", message: "Set not found" });
 
-    this.logger.debug(`[updateSet] verifying ownership`);
+    this.logger.debug("[updateSet] verifying ownership");
     if (!(await this.setsService.verifySetOwnership(req, params.setId))) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
 
     let newFolderIDs: string[] = [];
