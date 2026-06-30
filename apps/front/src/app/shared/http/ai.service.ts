@@ -1,7 +1,9 @@
 import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { lastValueFrom } from "rxjs";
 import { AiEnrichedCard, ApiResponse, ApiResponseOptions } from "@scholarsome/shared";
+
+export const AI_IMAGE_ONLY = "__image_only__" as const;
 
 @Injectable({
   providedIn: "root"
@@ -36,7 +38,7 @@ export class AiService {
     return null;
   }
 
-  async explain(cardId: string, setId: string): Promise<string | null> {
+  async explain(cardId: string, setId: string): Promise<string | typeof AI_IMAGE_ONLY | null> {
     let response: ApiResponse<string> | undefined;
 
     try {
@@ -45,6 +47,9 @@ export class AiService {
         setId
       }));
     } catch (e) {
+      if (e instanceof HttpErrorResponse && e.status === 422) {
+        return AI_IMAGE_ONLY;
+      }
       return null;
     }
 
