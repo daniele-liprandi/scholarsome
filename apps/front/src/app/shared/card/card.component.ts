@@ -83,6 +83,8 @@ export class CardComponent implements OnInit, AfterViewInit {
   protected emptyCardAlert = false;
 
   protected isMobile = false;
+  protected termAltText = "";
+  protected definitionAltText = "";
 
   protected modalRef?: BsModalRef;
   protected readonly faPenToSquare = faPenToSquare;
@@ -107,6 +109,8 @@ export class CardComponent implements OnInit, AfterViewInit {
     });
 
     this.bsModalService.onHide.subscribe(() => {
+      this.changingTerm = this.injectAltText(this.changingTerm ?? "", this.termAltText);
+      this.changingDefinition = this.injectAltText(this.changingDefinition ?? "", this.definitionAltText);
       this.actualTerm = this.changingTerm ? this.changingTerm : "";
       this.actualDefinition = this.changingDefinition ? this.changingDefinition : "";
     });
@@ -145,7 +149,28 @@ export class CardComponent implements OnInit, AfterViewInit {
     this.actualDefinition = value;
   }
 
+  get termHasImage(): boolean {
+    return /<img/i.test(this.changingTerm ?? "");
+  }
+
+  get definitionHasImage(): boolean {
+    return /<img/i.test(this.changingDefinition ?? "");
+  }
+
+  private extractAltText(html: string): string {
+    const match = (html ?? "").match(/<img[^>]+alt="([^"]*)"[^>]*>/i);
+    return match ? match[1] : "";
+  }
+
+  private injectAltText(html: string, altText: string): string {
+    const stripped = (html ?? "").replace(/\s+alt="[^"]*"/gi, "");
+    if (!altText.trim()) return stripped;
+    return stripped.replace(/<img/gi, `<img alt="${altText}"`);
+  }
+
   openEditModal() {
+    this.termAltText = this.extractAltText(this.changingTerm ?? "");
+    this.definitionAltText = this.extractAltText(this.changingDefinition ?? "");
     this.modalRef = this.bsModalService.show(this.modal, { class: "modal-xl" });
   }
 

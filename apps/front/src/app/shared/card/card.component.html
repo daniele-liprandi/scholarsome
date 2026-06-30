@@ -38,10 +38,18 @@
         <div class="col border-end">
           <p class="fs-2">Term</p>
           <quill-editor (onEditorCreated)="focusEditor($event)" [(ngModel)]="changingTerm" (ngModelChange)="editCardEvent.emit()" id="termEditor" class="w-100"></quill-editor>
+          <div *ngIf="termHasImage" class="mt-2">
+            <label class="form-label small text-muted mb-1">Image description (for AI)</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="termAltText" placeholder="Describe the image…" name="termAltText">
+          </div>
         </div>
         <div class="col mt-4 mt-md-0">
           <p class="fs-2 pull-right">Definition</p>
           <quill-editor [(ngModel)]="changingDefinition" (ngModelChange)="editCardEvent.emit()" id="definitionEditor" class="w-100"></quill-editor>
+          <div *ngIf="definitionHasImage" class="mt-2">
+            <label class="form-label small text-muted mb-1">Image description (for AI)</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="definitionAltText" placeholder="Describe the image…" name="definitionAltText">
+          </div>
         </div>
       </div>
       <div *ngIf="!isMobile" class="mt-2">
