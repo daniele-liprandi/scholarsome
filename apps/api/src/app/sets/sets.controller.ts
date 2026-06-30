@@ -18,7 +18,7 @@ import { SetsService } from "./sets.service";
 import { UsersService } from "../users/users.service";
 import { Request as ExpressRequest } from "express";
 import { ApiResponse, ApiResponseOptions } from "@scholarsome/shared";
-import { Set } from "@prisma/client";
+import { Set as PrismaSet } from "@prisma/client";
 import * as crypto from "crypto";
 import { CardsService } from "../cards/cards.service";
 import {
@@ -75,7 +75,7 @@ export class SetsController {
     type: ErrorResponse
   })
   @Get("user/me")
-  async mySets(@Request() req: ExpressRequest): Promise<ApiResponse<Set[]>> {
+  async mySets(@Request() req: ExpressRequest): Promise<ApiResponse<PrismaSet[]>> {
     const user = await this.authService.getUserInfo(req);
     if (!user) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
 
@@ -106,7 +106,7 @@ export class SetsController {
     type: ErrorResponse
   })
   @Get("user/:userId")
-  async sets(@Request() req: ExpressRequest, @Param() params: UserIdParam): Promise<ApiResponse<Set[]>> {
+  async sets(@Request() req: ExpressRequest, @Param() params: UserIdParam): Promise<ApiResponse<PrismaSet[]>> {
     const user = await this.authService.getUserInfo(req);
 
     // if a user is requesting their own sets -> don't filter private sets
@@ -196,7 +196,7 @@ export class SetsController {
     type: ErrorResponse
   })
   @Get(":setId")
-  async set(@Param() params: SetIdParam, @Request() req: ExpressRequest): Promise<ApiResponse<Set>> {
+  async set(@Param() params: SetIdParam, @Request() req: ExpressRequest): Promise<ApiResponse<PrismaSet>> {
     const set = await this.setsService.set({
       id: params.setId
     });
@@ -233,7 +233,7 @@ export class SetsController {
   })
   @UseGuards(AuthenticatedGuard)
   @Post()
-  async createSet(@Body(HtmlDecodePipe) body: CreateSetDto, @Request() req: ExpressRequest): Promise<ApiResponse<Set>> {
+  async createSet(@Body(HtmlDecodePipe) body: CreateSetDto, @Request() req: ExpressRequest): Promise<ApiResponse<PrismaSet>> {
     const user = await this.authService.getUserInfo(req);
     if (!user) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
 
@@ -348,7 +348,7 @@ export class SetsController {
   })
   @UseGuards(AuthenticatedGuard)
   @Patch(":setId")
-  async updateSet(@Param() params: SetIdParam, @Body(HtmlDecodePipe) body: UpdateSetDto, @Request() req: ExpressRequest): Promise<ApiResponse<Set>> {
+  async updateSet(@Param() params: SetIdParam, @Body(HtmlDecodePipe) body: UpdateSetDto, @Request() req: ExpressRequest): Promise<ApiResponse<PrismaSet>> {
     this.logger.log(`PATCH /sets/${params.setId} — cards: ${body.cards?.length ?? 0}`);
     try {
       return await this._updateSet(params, body, req);
@@ -358,7 +358,7 @@ export class SetsController {
     }
   }
 
-  private async _updateSet(params: SetIdParam, body: UpdateSetDto, req: ExpressRequest): Promise<ApiResponse<Set>> {
+  private async _updateSet(params: SetIdParam, body: UpdateSetDto, req: ExpressRequest): Promise<ApiResponse<PrismaSet>> {
     this.logger.debug(`[updateSet] resolving user`);
     const user = await this.authService.getUserInfo(req);
     if (!user) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
@@ -538,7 +538,7 @@ export class SetsController {
   })
   @UseGuards(AuthenticatedGuard)
   @Delete(":setId")
-  async deleteSet(@Param() params: SetIdParam, @Request() req: ExpressRequest): Promise<ApiResponse<Set>> {
+  async deleteSet(@Param() params: SetIdParam, @Request() req: ExpressRequest): Promise<ApiResponse<PrismaSet>> {
     if (!(await this.setsService.verifySetOwnership(req, params.setId))) throw new UnauthorizedException({ status: "fail", message: "Invalid authentication to access the requested resource" });
 
     const set = await this.setsService.deleteSet({
