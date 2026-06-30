@@ -108,6 +108,18 @@
       <div class="card-body fs-1 d-flex align-items-center justify-content-center text-wrap" onmousedown="return false" (click)="flipCard()">
         <div [innerHTML]="sanitizer.bypassSecurityTrustHtml(sideText)" class="overflow-hidden"></div>
       </div>
+      <div class="card-corner-info" *ngIf="cards && cards.length > 0">
+        <span class="priority-badge" [ngClass]="'priority-' + (cards[index]?.priority || 'C')">
+          <ng-container *ngIf="(cards[index]?.priority || 'C') === 'A'">
+            <fa-icon [icon]="faChevronUp"></fa-icon><fa-icon [icon]="faChevronUp"></fa-icon>
+          </ng-container>
+          <ng-container *ngIf="(cards[index]?.priority || 'C') === 'B'">
+            <fa-icon [icon]="faChevronUp"></fa-icon>
+          </ng-container>
+          <ng-container *ngIf="(cards[index]?.priority || 'C') === 'C'">C</ng-container>
+        </span>
+        <span *ngIf="currentFsrsDotClass" class="fsrs-dot" [ngClass]="currentFsrsDotClass"></span>
+      </div>
     </div>
   </div>
 

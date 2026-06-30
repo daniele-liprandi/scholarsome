@@ -107,3 +107,39 @@
     min-height: 60vh;
   }
 }
+
+.flashcard {
+  position: relative;
+}
+
+.card-corner-info {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+.priority-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+
+  &.priority-A { color: #1565C0; }
+  &.priority-B { color: #1E88E5; }
+  &.priority-C { color: #90CAF9; }
+}
+
+.fsrs-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &.dot-overdue { background: #e53935; }
+  &.dot-due     { background: #fdd835; }
+  &.dot-known   { background: #43a047; }
+}

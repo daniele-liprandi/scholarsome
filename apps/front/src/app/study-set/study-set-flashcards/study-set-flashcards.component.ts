@@ -3,7 +3,8 @@ import { SetsService } from "../../shared/http/sets.service";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Card } from "@prisma/client";
 import { BsModalRef } from "ngx-bootstrap/modal";
-import { faThumbsUp, faCake, faVolumeHigh, faLightbulb, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faThumbsUp, faCake, faVolumeHigh, faLightbulb, faSpinner, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { selectByPriority } from "./priority-selection.util";
 import { DomSanitizer, Meta, Title } from "@angular/platform-browser";
 import { NgForm } from "@angular/forms";
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
@@ -69,6 +70,7 @@ export class StudySetFlashcardsComponent implements OnInit {
   protected explanationLoading = false;
 
   protected fsrsStates: CardFsrsStateResponse[] | null = null;
+  protected fsrsStatesMap = new Map<string, CardFsrsStateResponse>();
   protected isGuest = false;
 
   protected modalRef?: BsModalRef;
@@ -78,6 +80,7 @@ export class StudySetFlashcardsComponent implements OnInit {
   protected readonly faVolumeHigh = faVolumeHigh;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faSpinner = faSpinner;
+  protected readonly faChevronUp = faChevronUp;
 
   private cardStartTime: number = Date.now();
 
@@ -86,6 +89,21 @@ export class StudySetFlashcardsComponent implements OnInit {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
     return this.fsrsStates.filter((s) => s.state !== 0 && new Date(s.due) <= endOfToday).length;
+  }
+
+  get currentFsrsDotClass(): string | null {
+    if (this.isGuest || !this.cards || this.cards.length === 0) return null;
+    const card = this.cards[this.index];
+    if (!card) return null;
+    const s = this.fsrsStatesMap.get(card.id);
+    if (!s || s.state === 0) return null;
+    const now = new Date();
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+    const due = new Date(s.due);
+    if (due <= now) return "dot-overdue";
+    if (due <= endOfToday) return "dot-due";
+    return "dot-known";
   }
 
   @HostListener("document:keypress", ["$event"])
@@ -243,12 +261,18 @@ export class StudySetFlashcardsComponent implements OnInit {
     }
 
     if (this.flashcardsMode === "learn") {
+      let n: number | null = null;
       if (this.formLimitType === "cards") {
-        const n = Math.max(1, Math.min(this.formLimitCards, this.cards.length));
-        this.cards = this.cards.slice(0, n);
+        n = Math.max(1, Math.min(this.formLimitCards, this.cards.length));
       } else if (this.formLimitType === "time") {
-        const n = this.estimateCardCount(this.formLimitMinutes);
-        this.cards = this.cards.slice(0, n);
+        n = this.estimateCardCount(this.formLimitMinutes);
+      }
+      if (n !== null) {
+        if (this.shufflingEnabled) {
+          this.cards = selectByPriority(this.cards, n);
+        } else {
+          this.cards = this.cards.slice(0, n);
+        }
       }
     }
 
@@ -301,6 +325,9 @@ export class StudySetFlashcardsComponent implements OnInit {
 
     if (!this.isGuest) {
       this.fsrsStates = await this.fsrsService.getStatesForSet(this.setId);
+      if (this.fsrsStates) {
+        this.fsrsStatesMap = new Map(this.fsrsStates.map((s) => [s.cardId, s]));
+      }
     }
 
     this.titleService.setTitle(set.title + " — Scholarsome");
