@@ -88,6 +88,10 @@
           <p class="text-secondary small fw-bold mb-1">Explanation</p>
           <p class="mb-0">{{explanation}}</p>
         </div>
+        <div *ngIf="explanationImageOnly" class="p-3 bg-light rounded mb-3">
+          <p class="text-secondary small fw-bold mb-1">Explanation</p>
+          <p class="mb-0 text-muted small">Explanation not available — add an image description in the card editor to use AI on this card.</p>
+        </div>
 
         <div class="d-flex gap-2 mt-4" *ngIf="activeQuestion.questionType === 'trueOrFalse'">
           <button type="button" class="btn btn-outline-success" (click)="selectTrueOrFalse(true)">True</button>

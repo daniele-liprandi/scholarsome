@@ -11,7 +11,7 @@ import {
   Set
 } from "@scholarsome/shared";
 import { SetsService } from "../../shared/http/sets.service";
-import { AiService } from "../../shared/http/ai.service";
+import { AiService, AI_IMAGE_ONLY } from "../../shared/http/ai.service";
 import { TtsService } from "../../shared/http/tts.service";
 import { FsrsService } from "../../shared/http/fsrs.service";
 import { UsersService } from "../../shared/http/users.service";
@@ -64,6 +64,7 @@ export class StudySetStudyComponent implements OnInit {
 
   explanation: string | null = null;
   explanationLoading = false;
+  explanationImageOnly = false;
 
   askDirection: StudyAskDirection = "definition";
   trueOrFalseEnabled = true;
@@ -97,6 +98,12 @@ export class StudySetStudyComponent implements OnInit {
 
   get firstTryMasteredCount(): number {
     return Math.max(this.cardOrder.length - this.wrongCardIds.size, 0);
+  }
+
+  private hasTextContent(html: string): boolean {
+    const withAlt = (html ?? "").replace(/<img[^>]+alt="([^"]+)"[^>]*>/gi, "$1");
+    const withoutImg = withAlt.replace(/<img[^>]*>/gi, "");
+    return withoutImg.replace(/<[^>]+>/g, "").trim().length > 0;
   }
 
   async ngOnInit(): Promise<void> {
@@ -169,14 +176,20 @@ export class StudySetStudyComponent implements OnInit {
       this.enrichedByCardId.set(card.cardId, card);
     }
 
-    this.sessionState = buildInitialQueue(this.set.cards, {
+    const studyableCards = this.set.cards.filter(
+        (card) => this.hasTextContent(card.term) || this.hasTextContent(card.definition)
+    );
+
+    this.sessionState = buildInitialQueue(studyableCards, {
       askDirection: this.askDirection,
       trueOrFalseEnabled: this.trueOrFalseEnabled,
       multipleChoiceEnabled: this.multipleChoiceEnabled
     });
 
     if (this.sessionState.queue.length === 0) {
-      this.blockedMessage = "No cards are available for Study mode in this set.";
+      this.blockedMessage = studyableCards.length === 0 ?
+        "No cards are available for Study mode — all cards contain only images without descriptions." :
+        "No cards are available for Study mode in this set.";
       return;
     }
 
@@ -227,13 +240,20 @@ export class StudySetStudyComponent implements OnInit {
   async explainCard(): Promise<void> {
     if (!this.activeQuestion || !this.setId) return;
     this.explanation = null;
+    this.explanationImageOnly = false;
     this.explanationLoading = true;
-    this.explanation = await this.aiService.explain(this.activeQuestion.cardId, this.setId);
+    const result = await this.aiService.explain(this.activeQuestion.cardId, this.setId);
+    if (result === AI_IMAGE_ONLY) {
+      this.explanationImageOnly = true;
+    } else {
+      this.explanation = result;
+    }
     this.explanationLoading = false;
   }
 
   private setActiveQuestion(): void {
     this.explanation = null;
+    this.explanationImageOnly = false;
     if (!this.sessionState || this.sessionState.pointer < 0) {
       this.activeQuestion = null;
       this.completed = true;
