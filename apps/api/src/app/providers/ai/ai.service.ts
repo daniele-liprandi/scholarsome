@@ -4,11 +4,13 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  OnModuleInit
+  OnModuleInit,
+  UnprocessableEntityException
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRedis } from "@liaoliaots/nestjs-redis";
 import { AiEnrichedCard } from "@scholarsome/shared";
+import { extractTextContent } from "./extract-text-content";
 import Redis from "ioredis";
 import { lastValueFrom } from "rxjs";
 import { SetsService } from "../../sets/sets.service";
@@ -82,8 +84,12 @@ export class AiService implements OnModuleInit {
     const card = set.cards.find((c: { id: string }) => c.id === cardId);
     if (!card) throw new NotFoundException("Card not found");
 
-    const term = this.stripHtml((card as { term: string }).term);
-    const definition = this.stripHtml((card as { definition: string }).definition);
+    const term = extractTextContent((card as { term: string }).term);
+    const definition = extractTextContent((card as { definition: string }).definition);
+
+    if (!term && !definition) {
+      throw new UnprocessableEntityException("IMAGE_ONLY");
+    }
 
     let wikipediaContext = "";
     try {
@@ -165,11 +171,13 @@ export class AiService implements OnModuleInit {
       throw new ForbiddenException("Set is private");
     }
 
-    const sanitizedCards = set.cards.map((card: { id: string; term: string; definition: string }) => ({
-      id: card.id,
-      term: this.stripHtml(card.term),
-      definition: this.stripHtml(card.definition)
-    }));
+    const sanitizedCards = set.cards
+        .map((card: { id: string; term: string; definition: string }) => ({
+          id: card.id,
+          term: extractTextContent(card.term),
+          definition: extractTextContent(card.definition)
+        }))
+        .filter((card) => card.term || card.definition);
 
     const llmCards = await this.requestLlmCards(sanitizedCards);
     const enriched = this.validateEnrichedCards(llmCards, sanitizedCards);
@@ -292,9 +300,5 @@ export class AiService implements OnModuleInit {
       trueStatement: statements.trueStatement,
       falseStatement: statements.falseStatement
     };
-  }
-
-  private stripHtml(text: string): string {
-    return text.replace(/<[^>]+>/g, "").trim();
   }
 }
