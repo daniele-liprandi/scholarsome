@@ -34,7 +34,8 @@ export class FsrsService {
           reps: 0,
           lapses: 0,
           state: 0 as const,
-          lastReview: null
+          lastReview: null,
+          avgReviewDurationMs: null
         };
       }
 
@@ -46,7 +47,8 @@ export class FsrsService {
         reps: s.reps,
         lapses: s.lapses,
         state: s.state as 0 | 1 | 2 | 3,
-        lastReview: s.lastReview ? s.lastReview.toISOString() : null
+        lastReview: s.lastReview ? s.lastReview.toISOString() : null,
+        avgReviewDurationMs: s.avgReviewDurationMs ?? null
       };
     });
   }
@@ -130,8 +132,6 @@ export class FsrsService {
       rating: 1 | 2 | 3 | 4,
       durationMs?: number
   ): Promise<CardFsrsStateResponse> {
-    void durationMs;
-
     const card = await this.prisma.card.findUnique({ where: { id: cardId } });
     if (!card) throw new NotFoundException();
 
@@ -162,6 +162,11 @@ export class FsrsService {
     const result = this.f.next(fsrsCard, now, rating as Grade);
     const next = result.card;
 
+    const newAvgDuration: number | null =
+      durationMs && durationMs > 0 ?
+        FsrsService.computeAvgDuration(existing?.avgReviewDurationMs ?? null, durationMs, next.reps) :
+        (existing?.avgReviewDurationMs ?? null);
+
     const updated = await this.prisma.cardFsrsState.upsert({
       // eslint-disable-next-line camelcase
       where: { userId_cardId: { userId, cardId } },
@@ -177,7 +182,8 @@ export class FsrsService {
         lapses: next.lapses,
         learningSteps: next.learning_steps,
         state: next.state,
-        lastReview: next.last_review
+        lastReview: next.last_review,
+        avgReviewDurationMs: newAvgDuration
       },
       update: {
         due: next.due,
@@ -189,7 +195,8 @@ export class FsrsService {
         lapses: next.lapses,
         learningSteps: next.learning_steps,
         state: next.state,
-        lastReview: next.last_review
+        lastReview: next.last_review,
+        avgReviewDurationMs: newAvgDuration
       }
     });
     /* eslint-enable camelcase */
@@ -202,7 +209,13 @@ export class FsrsService {
       reps: updated.reps,
       lapses: updated.lapses,
       state: updated.state as 0 | 1 | 2 | 3,
-      lastReview: updated.lastReview ? updated.lastReview.toISOString() : null
+      lastReview: updated.lastReview ? updated.lastReview.toISOString() : null,
+      avgReviewDurationMs: updated.avgReviewDurationMs ?? null
     };
+  }
+
+  static computeAvgDuration(prevAvg: number | null, durationMs: number, newReps: number): number {
+    if (prevAvg === null || newReps <= 1) return durationMs;
+    return Math.round((prevAvg * (newReps - 1) + durationMs) / newReps);
   }
 }
