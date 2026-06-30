@@ -136,6 +136,7 @@ export class SetsService {
       index: number;
       term: string;
       definition: string;
+      priority?: string;
     }[];
   }): Promise<Set | "tooLarge" | null> {
     let set: HttpResponse<ApiResponse<Set>> | undefined;

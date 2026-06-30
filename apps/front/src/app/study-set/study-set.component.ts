@@ -221,6 +221,7 @@ export class StudySetComponent implements OnInit {
     term?: string;
     definition?: string;
     fsrsState?: CardFsrsStateResponse | null;
+    priority?: string;
   }) {
     const card = this.cardsContainer.createComponent<CardComponent>(CardComponent);
 
@@ -235,6 +236,7 @@ export class StudySetComponent implements OnInit {
     card.instance.term = opts.term ? opts.term : "";
     card.instance.definition = opts.definition ? opts.definition : "";
     card.instance.fsrsState = opts.fsrsState ?? null;
+    card.instance.priority = opts.priority ?? "C";
 
     card.instance.deleteCardEvent.subscribe((e) => {
       if (this.cardsContainer.length > 1) {
@@ -317,7 +319,8 @@ export class StudySetComponent implements OnInit {
           id: c.instance.cardId,
           index: c.instance.cardIndex,
           term: c.instance.term,
-          definition: c.instance.definition
+          definition: c.instance.definition,
+          priority: c.instance.priority
         };
       })
     });
@@ -376,7 +379,8 @@ export class StudySetComponent implements OnInit {
             editingEnabled: false,
             term: card.term,
             definition: card.definition,
-            fsrsState
+            fsrsState,
+            priority: card.priority
           });
         }
       }
