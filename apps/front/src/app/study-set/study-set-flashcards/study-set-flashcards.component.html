@@ -49,6 +49,28 @@
             <label class="form-check-label" for="no-radio">No</label>
           </div>
         </div>
+        <div class="mb-3" *ngIf="formFlashcardsType === 'learn'">
+          <label class="form-label fs-5">Limit session</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="limit-type" id="limit-all-radio" value="all" [(ngModel)]="formLimitType">
+            <label class="form-check-label" for="limit-all-radio">All cards</label>
+          </div>
+          <div class="form-check mt-1">
+            <input class="form-check-input" type="radio" name="limit-type" id="limit-cards-radio" value="cards" [(ngModel)]="formLimitType">
+            <label class="form-check-label" for="limit-cards-radio">Number of cards</label>
+          </div>
+          <div class="mt-1 ms-4" *ngIf="formLimitType === 'cards'">
+            <input type="number" class="form-control form-control-sm w-auto" [(ngModel)]="formLimitCards" [min]="1" [max]="cards.length" name="limit-cards-value">
+          </div>
+          <div class="form-check mt-1">
+            <input class="form-check-input" type="radio" name="limit-type" id="limit-time-radio" value="time" [(ngModel)]="formLimitType">
+            <label class="form-check-label" for="limit-time-radio">Estimated time</label>
+          </div>
+          <div class="mt-1 ms-4 d-flex align-items-center gap-2" *ngIf="formLimitType === 'time'">
+            <input type="number" class="form-control form-control-sm w-auto" [(ngModel)]="formLimitMinutes" [min]="1" name="limit-time-value">
+            <span class="text-muted small">min &mdash; ≈ {{ sessionCardPreview }} card{{ sessionCardPreview !== 1 ? 's' : '' }}</span>
+          </div>
+        </div>
         <button type="submit" class="btn btn-primary">Start</button>
       </form>
     </div>
@@ -121,6 +143,10 @@
         <div *ngIf="explanation" class="mx-2 mt-2 p-3 bg-light rounded text-start">
           <p class="text-secondary small fw-bold mb-1">Explanation</p>
           <p class="mb-0">{{explanation}}</p>
+        </div>
+        <div *ngIf="explanationImageOnly" class="mx-2 mt-2 p-3 bg-light rounded text-start">
+          <p class="text-secondary small fw-bold mb-1">Explanation</p>
+          <p class="mb-0 text-muted small">Explanation not available — add an image description in the card editor to use AI on this card.</p>
         </div>
       </div>
     </div>

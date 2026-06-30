@@ -7,7 +7,7 @@ import { faThumbsUp, faCake, faVolumeHigh, faLightbulb, faSpinner } from "@forta
 import { DomSanitizer, Meta, Title } from "@angular/platform-browser";
 import { NgForm } from "@angular/forms";
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
-import { AiService } from "../../shared/http/ai.service";
+import { AiService, AI_IMAGE_ONLY } from "../../shared/http/ai.service";
 import { TtsService } from "../../shared/http/tts.service";
 import { FsrsService } from "../../shared/http/fsrs.service";
 import { UsersService } from "../../shared/http/users.service";
@@ -44,6 +44,10 @@ export class StudySetFlashcardsComponent implements OnInit {
   protected formFlashcardsType: "browse" | "learn" = "learn";
   protected formAnswerWith: "term" | "definition" = "definition";
   protected formEnableShuffling: "yes" | "no" = "yes";
+  protected formLimitType: "all" | "cards" | "time" = "all";
+  protected formLimitCards = 20;
+  protected formLimitMinutes = 10;
+  protected explanationImageOnly = false;
 
   protected knownCardIDs: string[] = [];
   protected roundCompleted = false;
@@ -112,6 +116,31 @@ export class StudySetFlashcardsComponent implements OnInit {
         this.flipCard();
       }
     }
+  }
+
+  estimateCardCount(minutes: number): number {
+    if (!this.cards || this.cards.length === 0) return 0;
+    const targetMs = minutes * 60 * 1000;
+    const stateMap = new Map<string, number | null>(
+        (this.fsrsStates ?? []).map((s) => [s.cardId, s.avgReviewDurationMs])
+    );
+    let total = 0;
+    let count = 0;
+    for (const card of this.cards) {
+      const avg = stateMap.get(card.id) ?? null;
+      const textLen =
+        card.term.replace(/<[^>]+>/g, "").length +
+        card.definition.replace(/<[^>]+>/g, "").length;
+      const ms = avg !== null ? avg : textLen * 100;
+      if (total + ms > targetMs) break;
+      total += ms;
+      count++;
+    }
+    return Math.max(1, Math.min(count, this.cards.length));
+  }
+
+  get sessionCardPreview(): number {
+    return this.estimateCardCount(this.formLimitMinutes);
   }
 
   updateIndex() {
@@ -190,6 +219,7 @@ export class StudySetFlashcardsComponent implements OnInit {
     this.flipInteraction = false;
     this.flipped = false;
     this.explanation = null;
+    this.explanationImageOnly = false;
     this.cardStartTime = Date.now();
 
     if (this.answer === "definition") {
@@ -212,6 +242,16 @@ export class StudySetFlashcardsComponent implements OnInit {
       this.shufflingEnabled = true;
     }
 
+    if (this.flashcardsMode === "learn") {
+      if (this.formLimitType === "cards") {
+        const n = Math.max(1, Math.min(this.formLimitCards, this.cards.length));
+        this.cards = this.cards.slice(0, n);
+      } else if (this.formLimitType === "time") {
+        const n = this.estimateCardCount(this.formLimitMinutes);
+        this.cards = this.cards.slice(0, n);
+      }
+    }
+
     this.sideText = this.cards[0][this.side as keyof Card] as string;
     this.currentCard = this.cards[0];
     this.cardStartTime = Date.now();
@@ -224,8 +264,14 @@ export class StudySetFlashcardsComponent implements OnInit {
   async explainCard() {
     if (!this.currentCard || !this.setId) return;
     this.explanation = null;
+    this.explanationImageOnly = false;
     this.explanationLoading = true;
-    this.explanation = await this.aiService.explain(this.currentCard.id, this.setId);
+    const result = await this.aiService.explain(this.currentCard.id, this.setId);
+    if (result === AI_IMAGE_ONLY) {
+      this.explanationImageOnly = true;
+    } else {
+      this.explanation = result;
+    }
     this.explanationLoading = false;
   }
 
