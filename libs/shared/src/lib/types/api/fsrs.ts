@@ -7,6 +7,7 @@ export interface CardFsrsStateResponse {
   lapses: number;
   state: 0 | 1 | 2 | 3;
   lastReview: string | null;
+  avgReviewDurationMs: number | null;
 }
 
 export interface FsrsSetSummary {

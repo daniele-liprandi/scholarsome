@@ -94,6 +94,7 @@ model CardFsrsState {
   lapses        Int       @default(0)
   learningSteps Int       @default(0)
   state         Int       @default(0)
+  avgReviewDurationMs Int?
   lastReview    DateTime?
   card          Card      @relation(fields: [cardId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
