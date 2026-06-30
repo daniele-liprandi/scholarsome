@@ -1,4 +1,5 @@
 import {
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -57,4 +58,14 @@ export class CardWithIdValidator {
     sanitizeHtml(params.value, sanitizationConfig)
   )
     definition: string;
+
+  @ApiProperty({
+    description: "The priority of the card",
+    example: "C",
+    required: false
+  })
+  @IsString()
+  @IsIn(["A", "B", "C"])
+  @IsOptional()
+    priority?: string;
 }

@@ -70,6 +70,7 @@ model Card {
   id         String          @id @default(uuid())
   setId      String
   index      Int
+  priority   String          @default("C")
   term       String          @db.Text
   definition String          @db.Text
   createdAt  DateTime        @default(now())

@@ -457,7 +457,7 @@ export class SetsController {
 
         await this.cardsService.updateCard({
           where: { id: card.id as string },
-          data: { index: card.index, term: termContent, definition: defContent }
+          data: { index: card.index, term: termContent, definition: defContent, priority: card.priority ?? "C" }
         });
       }
 
@@ -482,6 +482,7 @@ export class SetsController {
           index: card.index,
           term: termContent,
           definition: defContent,
+          priority: card.priority ?? "C",
           set: { connect: { id: set.id } }
         });
 
