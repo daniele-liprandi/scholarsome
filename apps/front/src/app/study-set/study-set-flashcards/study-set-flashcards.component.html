@@ -111,10 +111,10 @@
       <div class="card-corner-info" *ngIf="cards && cards.length > 0">
         <span class="priority-badge" [ngClass]="'priority-' + (cards[index]?.priority || 'C')">
           <ng-container *ngIf="(cards[index]?.priority || 'C') === 'A'">
-            <fa-icon [icon]="faChevronUp"></fa-icon><fa-icon [icon]="faChevronUp"></fa-icon>
+            <fa-icon [icon]="faArrowUpLong"></fa-icon><fa-icon [icon]="faArrowUpLong"></fa-icon>
           </ng-container>
           <ng-container *ngIf="(cards[index]?.priority || 'C') === 'B'">
-            <fa-icon [icon]="faChevronUp"></fa-icon>
+            <fa-icon [icon]="faArrowUpLong"></fa-icon>
           </ng-container>
           <ng-container *ngIf="(cards[index]?.priority || 'C') === 'C'">C</ng-container>
         </span>

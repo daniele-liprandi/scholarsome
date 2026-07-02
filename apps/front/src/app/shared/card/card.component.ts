@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 import { AlertComponent } from "../alert/alert.component";
 import { faPenToSquare } from "@fortawesome/free-regular-svg-icons";
-import { faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpLong } from "@fortawesome/free-solid-svg-icons";
 import { BsModalRef, BsModalService } from "ngx-bootstrap/modal";
 import { DomSanitizer } from "@angular/platform-browser";
 import { ViewportScroller } from "@angular/common";
@@ -90,7 +90,7 @@ export class CardComponent implements OnInit, AfterViewInit {
 
   protected modalRef?: BsModalRef;
   protected readonly faPenToSquare = faPenToSquare;
-  protected readonly faChevronUp = faChevronUp;
+  protected readonly faArrowUpLong = faArrowUpLong;
 
   ngOnInit() {
     this.actualTerm = this.changingTerm ? this.changingTerm : "";

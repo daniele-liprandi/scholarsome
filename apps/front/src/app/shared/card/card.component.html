@@ -20,10 +20,10 @@
     </div>
     <div class="priority-badge" [ngClass]="'priority-' + priority">
       <ng-container *ngIf="priority === 'A'">
-        <fa-icon [icon]="faChevronUp"></fa-icon><fa-icon [icon]="faChevronUp"></fa-icon>
+        <fa-icon [icon]="faArrowUpLong"></fa-icon><fa-icon [icon]="faArrowUpLong"></fa-icon>A
       </ng-container>
       <ng-container *ngIf="priority === 'B'">
-        <fa-icon [icon]="faChevronUp"></fa-icon>
+        <fa-icon [icon]="faArrowUpLong"></fa-icon>B
       </ng-container>
       <ng-container *ngIf="priority === 'C'">C</ng-container>
     </div>
@@ -66,11 +66,11 @@
         <div class="btn-group btn-group-sm" role="group" aria-label="Card priority">
           <input type="radio" class="btn-check" name="card-priority" id="pri-a" value="A" [(ngModel)]="priority" autocomplete="off">
           <label class="btn btn-outline-primary" for="pri-a">
-            A&nbsp;<fa-icon [icon]="faChevronUp"></fa-icon><fa-icon [icon]="faChevronUp"></fa-icon>
+            A&nbsp;<fa-icon [icon]="faArrowUpLong"></fa-icon><fa-icon [icon]="faArrowUpLong"></fa-icon>
           </label>
           <input type="radio" class="btn-check" name="card-priority" id="pri-b" value="B" [(ngModel)]="priority" autocomplete="off">
           <label class="btn btn-outline-primary" for="pri-b">
-            B&nbsp;<fa-icon [icon]="faChevronUp"></fa-icon>
+            B&nbsp;<fa-icon [icon]="faArrowUpLong"></fa-icon>
           </label>
           <input type="radio" class="btn-check" name="card-priority" id="pri-c" value="C" [(ngModel)]="priority" autocomplete="off">
           <label class="btn btn-outline-primary" for="pri-c">C</label>

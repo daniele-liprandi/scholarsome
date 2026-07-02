@@ -3,7 +3,7 @@ import { SetsService } from "../../shared/http/sets.service";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Card } from "@prisma/client";
 import { BsModalRef } from "ngx-bootstrap/modal";
-import { faThumbsUp, faCake, faVolumeHigh, faLightbulb, faSpinner, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { faThumbsUp, faCake, faVolumeHigh, faLightbulb, faSpinner, faArrowUpLong } from "@fortawesome/free-solid-svg-icons";
 import { selectByPriority } from "./priority-selection.util";
 import { DomSanitizer, Meta, Title } from "@angular/platform-browser";
 import { NgForm } from "@angular/forms";
@@ -80,7 +80,7 @@ export class StudySetFlashcardsComponent implements OnInit {
   protected readonly faVolumeHigh = faVolumeHigh;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faSpinner = faSpinner;
-  protected readonly faChevronUp = faChevronUp;
+  protected readonly faArrowUpLong = faArrowUpLong;
 
   private cardStartTime: number = Date.now();
 
